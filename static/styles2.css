@@ -1,0 +1,186 @@
+/* Overall Background and Font */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(to right, #1f1f1f, #5e5e5e); /* gradient background */
+    color: #e0e0e0;
+    margin: 0;
+}
+
+/* Headings Centered with Shadow */
+h1, h2 {
+    text-align: center;
+    color: #ffffff;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+    margin-bottom: 10px;
+}
+
+/* Navbar Theme */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
+/* Heading Text Style */
+.heading {
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 24px;
+}
+
+/* Status Box Layout */
+.status {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+    gap: 20px;
+}
+
+/* Uniform Card Style */
+.tab, .status-box {
+    background-color: #2f2f2f;
+    color: #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    min-width: 300px;
+    max-width: 400px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Tab Area */
+.tab {
+    display: none;
+    margin: auto;
+}
+
+/* Active Tab */
+.active {
+    display: block;
+}
+
+/* Row of Cards */
+.row {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 30px 0;
+}
+
+/* Buttons (Dashboard/Cancel) */
+.dashboard-button, .dashboard-cancel-button {
+    background-color: #3a3a3a;
+    color: #ffffff;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin: 10px;
+}
+
+.dashboard-button:hover {
+    background-color: #00ff84;
+    color: #000;
+}
+.dashboard-cancel-button:hover {
+    background-color: #e53935;
+}
+
+/* Tab Toggle Buttons */
+.tab-button {
+    margin: 10px;
+    padding: 12px 25px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #00ff84;
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.tab-button:hover {
+    background-color: #00cc66;
+}
+
+/* Modal Background */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* Modal Box */
+.modal-content {
+    background-color: #2f2f2f;
+    color: #ffffff;
+    margin: 10% auto;
+    padding: 25px;
+    border-radius: 12px;
+    width: 400px;
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Modal Inputs */
+.modal-content input {
+    width: 100%;
+    padding: 10px;
+    background-color: #1c1c1c;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 6px;
+    margin-top: 5px;
+}
+
+/* Modal Buttons */
+.modal-content button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    width: 48%;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.modal-content button:first-of-type {
+    background-color: #00ff84;
+    color: #000;
+}
+
+.modal-content button:last-of-type {
+    background-color: #ff4b5c;
+    color: #fff;
+}
+
+/* Network Icon (Status) */
+.network-icon {
+    font-size: 20px;
+    padding: 10px;
+    background-color: #2f2f2f;
+    color: #00ff84;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.network-icon:hover {
+    background-color: #00ff84;
+    color: #000;
+    transform: scale(1.1);
+}
+
+.cpu_usage {
+    color: #00ff84;
+    font-weight: bold;
+    font-size: 16px;
+}

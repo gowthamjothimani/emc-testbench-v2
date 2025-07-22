@@ -1,0 +1,27 @@
+{
+    "system-check": {
+        "cpu-usage": "13.2",
+        "temperature": "27.6",
+        "humidity": "58.3",
+        "timestamp": "2025-06-06 18:30:14"
+    },
+    "gas-status": {
+        "gas-type": "EXO",
+        "sensor-status": "working"
+    },
+    "efuse-turn-on-status": {
+        "efuse_gas_on": "working",
+        "efuse_badge_on": "error"
+    },
+    "card-reader-status": {
+        "in-reader": "301840",
+        "out-reader": "512301"
+    },
+    "relay-status": {
+        "lamp_badge_on": "working",
+        "lamp_alarm_red_on": "error"
+    },
+    "efuse-turn-off-status": {
+        "efuse_gas_off": "working"
+    }
+}

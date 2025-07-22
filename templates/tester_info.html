@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tester Information</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #2E2E2E, #D3D3D3); /* Gradient background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #FFFFFF;
+        }
+
+        .form-container {
+            background-color: #3C3C3C; /* Card color */
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .form-container h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #FFFFFF; /* Primary heading text */
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #AAAAAA; /* Lighter text for labels */
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 20px;
+            border: 1px solid #666666;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: #2E2E2E;
+            color: #FFFFFF;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]::placeholder {
+            color: #999999;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #00FF66; /* Neon green button */
+            color: #000000;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        button:hover {
+            background-color: #00cc55;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>EMC Test Bench</h1>
+        <form action="/submit_test_info" method="post">
+            <label for="tester_name">Tester Name:</label>
+            <input type="text" id="tester_name" name="tester_name" required>
+
+            <label for="pcb_serial">PCB Serial Number:</label>
+            <input type="text" id="pcb_serial" name="pcb_serial" required>
+
+            <button type="submit">Start Test</button>
+        </form>
+    </div>
+</body>
+</html>
