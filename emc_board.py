@@ -68,10 +68,10 @@ class EMC_Board:
 
     # Define methods for each bit (0-7) for both turning on and off
     def turn_on_efuse_gas(self):
-        self._turn_on_bit(4)
+        self._turn_on_bit(7)
 
     def turn_off_efuse_gas(self):
-        self._turn_off_bit(4)
+        self._turn_off_bit(7)
 
     def turn_on_efuse_alarm(self):
         self._turn_on_bit(6)
