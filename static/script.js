@@ -79,54 +79,52 @@ socket.on('sensor_selected', function (data) {
                             cardDataElement.textContent = '--';
                         }
                     });
-
                 function controlEfuse(action) {
-                let confirmMsg = action.includes("on") ? `${action.replaceAll("_", " ")} turned on?` : `${action.replaceAll("_", " ")} turned off?`;
-                let confirmed = confirm(confirmMsg);
-                let status = confirmed ? "working" : "error";
+                    // Step 1: Actually perform the ON/OFF action first
+                    fetch(`/control/${action}`)
+                        .then(response => response.text())
+                        .then(data => {
+                            // Step 2: Now ask the user if it worked
+                            let confirmMsg = `${action.replaceAll("_", " ")} is now done. Is it working?`;
+                            let confirmed = confirm(confirmMsg);
+                            let status = confirmed ? "working" : "error";
 
-                fetch(`/control/${action}`)
-                    .then(response => response.text())
-                    .then(data => {
-                        socket.emit('efuse_status_update', { action: action, status: status });
-                        //alert(`Action: ${action} - Response: ${data}`);
-                    })
-                    .catch(error => {
-                        alert('Error controlling eFuse: ' + error);
-                    });
-                }                 
+                            // Step 3: Emit status to backend
+                            socket.emit('efuse_status_update', { action: action, status: status });
+                        })
+                        .catch(error => {
+                            alert('Error controlling eFuse: ' + error);
+                        });
+                }
 
-            function controlLamp(action) {
-                let confirmMsg = `${action.replaceAll("_", " ")}?`;
-                let confirmed = confirm(confirmMsg);
-                let status = confirmed ? "working" : "error";
+                function controlLamp(action) {
+                    fetch(`/control/${action}`)
+                        .then(response => response.text())
+                        .then(data => {
+                            let confirmMsg = `${action.replaceAll("_", " ")} is now done. Is it working?`;
+                            let confirmed = confirm(confirmMsg);
+                            let status = confirmed ? "working" : "error";
+                            socket.emit('relay_status_update', { action: action, status: status });
+                        })
+                        .catch(error => {
+                            alert('Error controlling Lamp: ' + error);
+                        });
+                }
 
-                fetch(`/control/${action}`)
-                    .then(response => response.text())
-                    .then(data => {
-                        socket.emit('relay_status_update', { action: action, status: status });
-                        //alert(`Action: ${action} - Response: ${data}`);
-                    })
-                    .catch(error => {
-                        alert('Error controlling Lamp: ' + error);
-                    });
-            }
+                function controlAlarm(action) {
+                    fetch(`/control/${action}`)
+                        .then(response => response.text())
+                        .then(data => {
+                            let confirmMsg = `${action.replaceAll("_", " ")} is now done. Is it working?`;
+                            let confirmed = confirm(confirmMsg);
+                            let status = confirmed ? "working" : "error";
+                            socket.emit('alarm_status_update', { action: action, status: status });
+                        })
+                        .catch(error => {
+                            alert('Error controlling sound: ' + error);
+                        });
+                }
 
-            function controlAlarm(action) {
-            let confirmMsg = `${action.replaceAll("_", " ")}?`;
-                let confirmed = confirm(confirmMsg);
-                let status = confirmed ? "working" : "error";
-
-                fetch(`/control/${action}`)
-                    .then(response => response.text())
-                    .then(data => {
-                        socket.emit('alarm_status_update', { action: action, status: status });
-                        //alert(`Action: ${action} - Response: ${data}`);
-                    })
-                    .catch(error => {
-                        alert('Error controlling sound: ' + error);
-                    });
-        }
 
             socket.on('sensor_status', function(data) {
             document.getElementById("gasData").innerText = data.state;
