@@ -34,23 +34,36 @@ selected_sensor = None
 last_sensor_reading = None
 
 def gas_test():
-    global gas_test_running, selected_sensor
+    global gas_test_running, selected_sensor, last_sensor_reading
     while gas_test_running:
         if selected_sensor:
             value = selected_sensor.read_sensor()
             last_sensor_reading = value
-            log_exporter.update_sensor_status(selected_sensor, last_sensor_reading) 
+            log_exporter.update_sensor_status(selected_sensor, last_sensor_reading)
 
-            if value:
-                if isinstance(value, list) and len(value) > 2 and 0 < value[2] < 1024:
-                    socketio.emit('sensor_status', {'state': 'working', 'color': 'lightgreen'})
-                elif isinstance(value, int) and value > 0:
-                    socketio.emit('sensor_status', {'state': 'working', 'color': 'lightgreen'})
+            if value is not None:
+                if isinstance(value, list) and len(value) > 2:
+                    if 0 < value[2] < 1024:
+                        socketio.emit('sensor_status', {'state': 'working', 'color': 'lightgreen'})
+                    else:
+                        socketio.emit('sensor_status', {'state': 'error', 'color': 'lightcoral'})
+                elif isinstance(value, int):
+                    if selected_sensor.sensor_type == "Drager X-Zone":
+                        if value == 0:
+                            socketio.emit('sensor_status', {'state': 'working', 'color': 'lightgreen'})
+                        else:
+                            socketio.emit('sensor_status', {'state': 'error', 'color': 'lightcoral'})
+                    else:
+                        if value > 0:
+                            socketio.emit('sensor_status', {'state': 'working', 'color': 'lightgreen'})
+                        else:
+                            socketio.emit('sensor_status', {'state': 'error', 'color': 'lightcoral'})
                 else:
                     socketio.emit('sensor_status', {'state': 'error', 'color': 'lightcoral'})
             else:
                 socketio.emit('sensor_status', {'state': 'error', 'color': 'lightcoral'})
         time.sleep(1)
+
 
 def monitor_fuse_and_gas_n():
     global fuse_check_running

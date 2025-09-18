@@ -29,7 +29,8 @@ class GasSensor:
                 value = self.instrument.read_registers(0, 100, 4)  
                 return value if isinstance(value, list) and len(value) > 0 else None
             elif self.sensor_type == "Drager X-Zone":
-                return self.instrument.read_long(29, 3)  
+                value = self.instrument.read_long(29, 3)
+                return value
         except Exception:
             return None
     
