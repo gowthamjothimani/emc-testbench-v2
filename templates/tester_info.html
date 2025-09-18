@@ -74,28 +74,28 @@
 <body>
     <div class="form-container">
         <h1>EMC Test Bench</h1>
-     <form method="POST" action="/submit_test_info">
-            <label for="tester_name">Tester Name:</label>
-            <input type="text" id="tester_name" name="tester_name" required>
+    <form method="POST" action="/submit_test_info">
+    <label for="tester_name">Tester Name:</label>
+    <input type="text" id="tester_name" name="tester_name" required>
 
-            <label for="hardware_provider">Company Name:</label>
-            <select id="hardware_provider" name="hardware_provider" required onchange="updateDeviceOptions()">
-                <option value="">-- Select Company --</option>
-                <option value="Visics">Visics</option>
-                <option value="Total Safety">Total Safety</option>
-            </select>
+    <label for="hardware_provider">Company Name:</label>
+    <select id="hardware_provider" name="hardware_provider" required onchange="updateDeviceOptions()">
+        <option value="">-- Select Company --</option>
+        <option value="Visics">Visics</option>
+        <option value="Total Safety">Total Safety</option>
+    </select>
 
-            <label for="hardware_type">Device Type:</label>
-            <select id="hardware_type" name="hardware_type" required>
-                <option value="">-- Select Device --</option>
-            </select>
+    <label for="hardware_type">Device Type:</label>
+    <select id="hardware_type" name="hardware_type" required>
+        <option value="">-- Select Device --</option>
+    </select>
 
-            <label for="pcb_serial">PCB Serial Number:</label>
-            <input type="text" id="pcb_serial" name="pcb_serial" required>
+    <label for="pcb_serial">PCB Serial Number:</label>
+    <input type="text" id="pcb_serial" name="pcb_serial" required>
 
+    <button type="submit">Start Test</button>
+</form>
 
-            <button type="submit">Start Test</button>
-        </form>
     </div>
 
     <script>
