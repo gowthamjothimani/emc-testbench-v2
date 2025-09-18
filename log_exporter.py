@@ -52,16 +52,17 @@ class LogExporter:
         self.env_data["humidity"] = humidity
         self.env_data["cpu"] = cpu
 
-    def set_test_details(self, tester_name, pcb_serial_number):
-        self.tester_name = tester_name
-        self.pcb_serial_number = pcb_serial_number
+    def set_test_details(self, tester_name, pcb_serial, hardware_provider, hardware_type):
+        self.test_details = {
+            "tester_name": tester_name,
+            "pcb_serial": pcb_serial,
+            "hardware_provider": hardware_provider,
+            "hardware_type": hardware_type
+        }
 
     def export_log(self):
         data = {
-               "test-detail": {
-                "tester-name": self.tester_name,
-                "pcb_number": self.pcb_serial_number
-            },
+                "test_details": self.test_details,
             "system-check": {
                 "cpu-usage": self.env_data["cpu"],
                 "temperature": self.env_data["temperature"],

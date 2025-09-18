@@ -2,6 +2,9 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_socketio import SocketIO
 import minimalmodbus
 import threading
+from eeprom import EEPROM
+import json
+from datetime import datetime
 import time
 import psutil
 from emc_board import EMC_Board
@@ -16,6 +19,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Initialize components
 controller = EMC_Board()
+eeprom = EEPROM()
 mqtt_client = MQTTClient(socketio)
 tester_info_submitted = False
 fuse_check_running = True
@@ -97,12 +101,19 @@ def home():
 def tester_info():
     return render_template('tester_info.html')
 
-@app.route('/submit_test_info', methods=['POST'])
 def submit_test_info():
     global tester_info_submitted
     tester_name = request.form['tester_name']
     pcb_serial = request.form['pcb_serial']
-    log_exporter.set_test_details(tester_name, pcb_serial)
+    hardware_provider = request.form['hardware_provider']
+    hardware_type = request.form['hardware_type']
+
+    log_exporter.set_test_details(
+        tester_name, 
+        pcb_serial, 
+        hardware_provider, 
+        hardware_type
+    )
     tester_info_submitted = True
     return redirect(url_for('home'))
 
@@ -261,6 +272,58 @@ def handle_relay_update(data):
     status = data.get('status', '')
     log_exporter.set_state("alarm", action, status)
 
+    
+# ========== QC STATUS ==============
+@app.route('/qc_status', methods=['POST'])
+def qc_status():
+    try:
+        data = request.json
+        qc_status = data.get("qc_status") 
+        hardware_provider = data.get("hardware_provider", "unknown")
+        hardware_type = data.get("hardware_type", "unknown")
+        serial_num = data.get("serial_number", "0000")
+
+        provider_map = {
+            "VISICS": "VIS",
+            "Total Safety": "ORION"
+        }
+        provider_prefix = provider_map.get(hardware_provider, hardware_provider.upper())
+
+        final_serial = f"{provider_prefix}-{hardware_type}-{serial_num}"
+
+        device_info = {
+            "serial_number": final_serial,
+            "qc_status": qc_status,
+            "tested_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        eeprom.write_protect(True)
+        eeprom.write_eeprom(0x0000, [0xFF] * 250)
+
+        json_bytes = json.dumps(device_info).encode("utf-8")
+        eeprom.write_eeprom(0x0000, list(json_bytes))
+
+        eeprom.write_protect(False)
+
+        return jsonify({"status": "success", "data": device_info})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+    
+@app.route('/device_info', methods=['GET'])
+def device_info():
+    try:
+        raw_data = eeprom.read_eeprom(0x0000, 250)
+        # Strip trailing 0xFF
+        clean_bytes = bytes([b for b in raw_data if b != 0xFF])
+        if not clean_bytes:
+            return jsonify({"status": "empty", "message": "No data in EEPROM"})
+
+        # Decode JSON
+        device_info = json.loads(clean_bytes.decode("utf-8"))
+        return jsonify({"status": "success", "data": device_info})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # ========== BACKGROUND THREADS ==========
 def start_monitoring():
