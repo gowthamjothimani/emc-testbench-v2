@@ -101,6 +101,7 @@ def home():
 def tester_info():
     return render_template('tester_info.html')
 
+@app.route('/submit_test_info', methods=['POST'])
 def submit_test_info():
     global tester_info_submitted
     tester_name = request.form['tester_name']
@@ -108,14 +109,11 @@ def submit_test_info():
     hardware_provider = request.form['hardware_provider']
     hardware_type = request.form['hardware_type']
 
-    log_exporter.set_test_details(
-        tester_name, 
-        pcb_serial, 
-        hardware_provider, 
-        hardware_type
-    )
+    log_exporter.set_test_details(tester_name, pcb_serial, hardware_provider, hardware_type)
     tester_info_submitted = True
+
     return redirect(url_for('home'))
+
 
 # ========== SENSOR SELECTION ==========
 @socketio.on('select_gas_sensor')
@@ -324,6 +322,10 @@ def device_info():
         return jsonify({"status": "success", "data": device_info})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/get_test_info', methods=['GET'])
+def get_test_info():
+    return jsonify(log_exporter.test_details)
 
 # ========== BACKGROUND THREADS ==========
 def start_monitoring():

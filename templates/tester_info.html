@@ -74,51 +74,53 @@
 <body>
     <div class="form-container">
         <h1>EMC Test Bench</h1>
-        <form action="/submit_test_info" method="post">
-            <label for="tester_name">Tester Name:</label>
-            <input type="text" id="tester_name" name="tester_name" required>
+    <form method="POST" action="/submit_test_info">
+    <label for="tester_name">Tester Name:</label>
+    <input type="text" id="tester_name" name="tester_name" required>
 
-            <label for="hardware_provider">Company Name:</label>
-            <select id="hardware_provider" name="company_name" required onchange="updateDeviceOptions()">
-                <option value="">-- Select Company --</option>
-                <option value="Visics">Visics</option>
-                <option value="Total Safety">Total Safety</option>
-            </select>
+    <label for="hardware_provider">Company Name:</label>
+    <select id="hardware_provider" name="hardware_provider" required onchange="updateDeviceOptions()">
+        <option value="">-- Select Company --</option>
+        <option value="Visics">Visics</option>
+        <option value="Total Safety">Total Safety</option>
+    </select>
 
-            <label for="hardware_typ">Device Type:</label>
-            <select id="hardware_typ" name="device_type" required>
-                <option value="">-- Select Device --</option>
-            </select>
+    <label for="hardware_type">Device Type:</label>
+    <select id="hardware_type" name="hardware_type" required>
+        <option value="">-- Select Device --</option>
+    </select>
 
-            <label for="pcb_serial">PCB Serial Number:</label>
-            <input type="text" id="pcb_serial" name="pcb_serial" required>
+    <label for="pcb_serial">PCB Serial Number:</label>
+    <input type="text" id="pcb_serial" name="pcb_serial" required>
 
-            <button type="submit">Start Test</button>
-        </form>
+    <button type="submit">Start Test</button>
+</form>
+
     </div>
 
     <script>
         function updateDeviceOptions() {
-            const company = document.getElementById("hardware_provider").value;
-            const deviceSelect = document.getElementById("hardware_typ");
+    const company = document.getElementById("hardware_provider").value;
+    const deviceSelect = document.getElementById("hardware_type");  // ✅ updated ID
 
-            // Clear old options
-            deviceSelect.innerHTML = '<option value="">-- Select Device --</option>';
+    // Clear old options
+    deviceSelect.innerHTML = '<option value="">-- Select Device --</option>';
 
-            let options = [];
-            if (company === "Visics") {
-                options = ["ACU-EMC-G6.1.0", "ACU-EMC-G6.1.1"];
-            } else if (company === "Total Safety") {
-                options = ["SPM-EMC-G7.0.0", "SBU-EMC-G7.0.0", "SAU-EMC-G7.0.0"];
-            }
+    let options = [];
+    if (company === "Visics") {
+        options = ["ACU-EMC-G6.1.0", "ACU-EMC-G6.1.1"];
+    } else if (company === "Total Safety") {
+        options = ["SPM-EMC-G7.0.0", "SBU-EMC-G7.0.0", "SAU-EMC-G7.0.0"];
+    }
 
-            options.forEach(opt => {
-                const optionElement = document.createElement("option");
-                optionElement.value = opt;
-                optionElement.textContent = opt;
-                deviceSelect.appendChild(optionElement);
-            });
-        }
+    options.forEach(opt => {
+        const optionElement = document.createElement("option");
+        optionElement.value = opt;
+        optionElement.textContent = opt;
+        deviceSelect.appendChild(optionElement);
+    });
+}
+
     </script>
 </body>
 </html>
