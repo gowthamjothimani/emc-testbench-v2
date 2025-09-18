@@ -8,6 +8,10 @@ h1,h2{
 }
 .navbar {
     display: flex;
+    display: flex;
+    flex-wrap: wrap;     
+    justify-content: center;
+    gap: 15px;      
     max-width: 100%;
     padding-top: 10px;
     padding-right: 20px;
@@ -34,7 +38,9 @@ h1,h2{
     flex-grow: 1;
     flex-shrink: 1;
     flex-basis: 0%;
-    gap: 20px;
+    flex-wrap: wrap;       /* Wrap if space runs out */
+    justify-content: center;
+    gap: 15px;      
   }
 
 .cpu_usage {
@@ -107,8 +113,19 @@ h1,h2{
 .active {
     display: block;
 }
+
+button {
+    min-width: 150px;   /* Fixed width for uniformity */
+    min-height: 50px;   /* Fixed height */
+    text-align: center;
+    justify-content: center;
+}
+
 .dashboard-button,.dashboard-cancel-button{
     background-color: #27282E; 
+    flex: 1 1 auto;       
+    max-width: 200px;     
+    margin: 10px;   
     border: none; 
     color: white; 
     padding: 15px 32px; 
