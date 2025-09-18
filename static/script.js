@@ -266,3 +266,29 @@ socket.on('sensor_selected', function (data) {
     function closeDeviceInfo() {
         document.getElementById("deviceInfoModal").style.display = "none";
     }
+
+    function confirmQCStatus(qcStatus) {
+    fetch('/get_test_info')
+        .then(response => response.json())
+        .then(testInfo => {
+            // Build final serial number dynamically
+            let providerCode = testInfo.hardware_provider === "Visics" ? "VIS" : "ORION";
+            let serial_number = `${providerCode}-${testInfo.hardware_type}-${testInfo.pcb_serial}`;
+
+            let qcData = {
+                serial_number: serial_number,
+                qc_status: qcStatus,
+                tested_date: new Date().toISOString().slice(0, 19).replace('T', ' ')
+            };
+
+            // Send to backend to write EEPROM
+            fetch('/qc_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(qcData)
+            })
+            .then(r => r.json())
+            .then(res => alert(res.message))
+            .catch(err => console.error("QC update failed:", err));
+        });
+}
