@@ -24,7 +24,7 @@
             max-width: 400px;
         }
 
-        .form-container h2 {
+        .form-container h1 {
             text-align: center;
             margin-bottom: 25px;
             color: #FFFFFF; /* Primary heading text */
@@ -37,7 +37,7 @@
             color: #AAAAAA; /* Lighter text for labels */
         }
 
-        input[type="text"] {
+        input[type="text"], select {
             width: 100%;
             padding: 10px 12px;
             margin-bottom: 20px;
@@ -78,11 +78,47 @@
             <label for="tester_name">Tester Name:</label>
             <input type="text" id="tester_name" name="tester_name" required>
 
+            <label for="hardware_provider">Company Name:</label>
+            <select id="hardware_provider" name="company_name" required onchange="updateDeviceOptions()">
+                <option value="">-- Select Company --</option>
+                <option value="Visics">Visics</option>
+                <option value="Total Safety">Total Safety</option>
+            </select>
+
+            <label for="hardware_typ">Device Type:</label>
+            <select id="hardware_typ" name="device_type" required>
+                <option value="">-- Select Device --</option>
+            </select>
+
             <label for="pcb_serial">PCB Serial Number:</label>
             <input type="text" id="pcb_serial" name="pcb_serial" required>
 
             <button type="submit">Start Test</button>
         </form>
     </div>
+
+    <script>
+        function updateDeviceOptions() {
+            const company = document.getElementById("hardware_provider").value;
+            const deviceSelect = document.getElementById("hardware_typ");
+
+            // Clear old options
+            deviceSelect.innerHTML = '<option value="">-- Select Device --</option>';
+
+            let options = [];
+            if (company === "Visics") {
+                options = ["G6.1.0", "G6.1.1"];
+            } else if (company === "Total Safety") {
+                options = ["SPM", "SBU", "SAU"];
+            }
+
+            options.forEach(opt => {
+                const optionElement = document.createElement("option");
+                optionElement.value = opt;
+                optionElement.textContent = opt;
+                deviceSelect.appendChild(optionElement);
+            });
+        }
+    </script>
 </body>
 </html>
