@@ -327,6 +327,11 @@ def device_info():
 def get_test_info():
     return jsonify(log_exporter.test_details)
 
+@app.route('/get_last_log')
+def get_last_log():
+    return jsonify(log_exporter.get_last_log())
+
+
 # ========== BACKGROUND THREADS ==========
 def start_monitoring():
     threading.Thread(target=monitor_fuse_and_gas_n, daemon=True).start()

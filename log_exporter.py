@@ -59,6 +59,24 @@ class LogExporter:
             "hardware_provider": hardware_provider,
             "hardware_type": hardware_type
         }
+    def get_last_log(self):
+        return {
+            "system-check": {
+                "cpu-usage": self.env_data["cpu"],
+                "temperature": self.env_data["temperature"],
+                "humidity": self.env_data["humidity"],
+                "timestamp": time.strftime('%Y-%m-%d %H:%M:%S')
+            },
+            "gas-status": {
+                "gas-type": self.sensor_type,
+                "sensor-status": self.sensor_status
+            },
+            "efuse-turn-on-status": self.efuse_on_states,
+            "efuse-turn-off-status": self.efuse_off_states,
+            "card-reader-status": self.card_reader_data,
+            "relay-status": self.relay_states,
+            "alarm-status": self.alarm_states
+        }
 
     def export_log(self):
         data = {

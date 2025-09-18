@@ -227,11 +227,52 @@ socket.on('sensor_selected', function (data) {
     let qcStatus = null;
 
     function openQCModal(status) {
-        qcStatus = status;
-        document.getElementById("qcTitle").innerText = "QC " + status.toUpperCase();
-        document.getElementById("qcResult").innerText = "Test Result: QC " + status.toUpperCase();
-        document.getElementById("qcModal").style.display = "block";
-    }
+    document.getElementById("qcTitle").innerText = status === "passed" ? "QC PASSED" : "QC FAILED";
+    document.getElementById("qcResult").innerText = "";
+
+    // Request latest test log from backend
+    fetch('/get_last_log')
+        .then(res => res.json())
+        .then(data => {
+            let html = "<ul>";
+            html += formatResult("CPU Usage", data["system-check"]["cpu-usage"] + "%");
+            html += formatResult("Temperature", data["system-check"]["temperature"] + " °C");
+            html += formatResult("Humidity", data["system-check"]["humidity"] + " %");
+            html += formatResult("Gas Sensor", data["gas-status"]["sensor-status"]);
+            
+            // Efuse ON
+            Object.entries(data["efuse-turn-on-status"]).forEach(([k,v]) => {
+                html += formatResult(k.replaceAll("_"," "), v);
+            });
+            // Efuse OFF
+            Object.entries(data["efuse-turn-off-status"]).forEach(([k,v]) => {
+                html += formatResult(k.replaceAll("_"," "), v);
+            });
+            // Card readers
+            html += formatResult("Card IN Reader", data["card-reader-status"]["in-reader"]);
+            html += formatResult("Card OUT Reader", data["card-reader-status"]["out-reader"]);
+            // Relays
+            Object.entries(data["relay-status"]).forEach(([k,v]) => {
+                html += formatResult(k.replaceAll("_"," "), v);
+            });
+            // Alarms
+            Object.entries(data["alarm-status"]).forEach(([k,v]) => {
+                html += formatResult(k.replaceAll("_"," "), v);
+            });
+
+            html += "</ul>";
+            document.getElementById("qcResultsList").innerHTML = html;
+
+            // Save QC status for confirmation later
+            document.getElementById("qcResult").setAttribute("data-status", status);
+        });
+}
+
+function formatResult(label, value) {
+    let icon = (value && value.toString().toLowerCase() === "working") ? "✅" : "❌";
+    return `<li>${label}: ${icon} (${value})</li>`;
+}
+
 
     function closeQCModal() {
         document.getElementById("qcModal").style.display = "none";

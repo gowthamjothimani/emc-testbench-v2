@@ -19,10 +19,10 @@
                 <p>Humidity: <span class="status-box" id="hum_display">-- %</span></p> 
                 <span id="networkIcon" class="network-icon" onclick="openMQTTConfig()">🔌</span>
                 <button class="dashboard-button" onclick="saveLog()">Save Log</button><nav>
-                <button onclick="openQCModal('passed')">QC PASS</button>
-                <button onclick="openQCModal('failed')">QC FAIL</button>
+                <button class="dashboard-button" onclick="openQCModal('passed')">QC PASS</button>
+                <button class="dashboard-button" onclick="openQCModal('failed')">QC FAIL</button>
                 <button class="dashboard-button" onclick="exportLog()">Export Log</button>
-                <button onclick="showDeviceInfo()">Board Info</button>
+                <button class="dashboard-button" onclick="showDeviceInfo()">Board Info</button>
                 <button class="dashboard-button" id="startTestBtn" onclick="startTest()">Start Test</button>
                 <button class="dashboard-cancel-button" id="stopTestBtn" onclick="stopTest()">Stop Test</button>
 
@@ -54,13 +54,16 @@
     </div>
 
         <div id="qcModal" class="modal">
-            <div class="modal-content">
-                <h2 id="qcTitle">QC Result</h2>
-                <p id="qcResult"></p>
-                <button onclick="confirmQC()">Confirm</button>
-                <button onclick="closeQCModal()">Cancel</button>
-            </div>
-            </div>
+    <div class="modal-content">
+        <h2 id="qcTitle">QC Result</h2>
+        <div id="qcResultsList"></div>
+        <p id="qcResult"></p>
+        <button onclick="confirmQC()">Confirm</button>
+        <button onclick="closeQCModal()">Cancel</button>
+    </div>
+</div>
+
+
 
             <div id="deviceInfoModal" class="modal">
             <div class="modal-content">
