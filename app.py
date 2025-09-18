@@ -278,16 +278,21 @@ def handle_relay_update(data):
 def qc_status():
     try:
         data = request.json
-        qc_status = data.get("qc_status")  # "passed" or "failed"
+        qc_status = data.get("qc_status") 
         hardware_provider = data.get("hardware_provider", "unknown")
         hardware_type = data.get("hardware_type", "unknown")
-        serial_number = data.get("serial_number", "unknown")
+        serial_num = data.get("serial_number", "0000")
 
-        # Form JSON object
+        provider_map = {
+            "VISICS": "VIS",
+            "Total Safety": "ORION"
+        }
+        provider_prefix = provider_map.get(hardware_provider, hardware_provider.upper())
+
+        final_serial = f"{provider_prefix}-{hardware_type}-{serial_num}"
+
         device_info = {
-            "hardware_provider": hardware_provider,
-            "hardware_type": hardware_type,
-            "serial_number": serial_number,
+            "serial_number": final_serial,
             "qc_status": qc_status,
             "tested_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
@@ -298,12 +303,12 @@ def qc_status():
         json_bytes = json.dumps(device_info).encode("utf-8")
         eeprom.write_eeprom(0x0000, list(json_bytes))
 
-        # Enable write-protect
         eeprom.write_protect(False)
 
         return jsonify({"status": "success", "data": device_info})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
     
 @app.route('/device_info', methods=['GET'])
 def device_info():

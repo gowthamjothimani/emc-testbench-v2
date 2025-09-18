@@ -224,3 +224,45 @@ socket.on('sensor_selected', function (data) {
     updateTempHum();
     setInterval(updateTempHum, 10000);
     
+    let qcStatus = null;
+
+    function openQCModal(status) {
+        qcStatus = status;
+        document.getElementById("qcTitle").innerText = "QC " + status.toUpperCase();
+        document.getElementById("qcResult").innerText = "Test Result: QC " + status.toUpperCase();
+        document.getElementById("qcModal").style.display = "block";
+    }
+
+    function closeQCModal() {
+        document.getElementById("qcModal").style.display = "none";
+    }
+
+    function confirmQC() {
+        fetch('/qc_status', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                qc_status: qcStatus,
+                hardware_provider: "visics",
+                hardware_type: "G6.1.1",
+                serial_number: "VIS-ACU-EMC-G6.1.1-001"
+            })
+        }).then(res => res.json())
+        .then(data => {
+            alert("QC Update: " + data.status);
+            closeQCModal();
+        });
+    }
+
+    function showDeviceInfo() {
+        fetch('/device_info')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("deviceInfoData").innerText = JSON.stringify(data, null, 2);
+                document.getElementById("deviceInfoModal").style.display = "block";
+            });
+    }
+
+    function closeDeviceInfo() {
+        document.getElementById("deviceInfoModal").style.display = "none";
+    }
