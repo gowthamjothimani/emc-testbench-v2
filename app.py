@@ -110,8 +110,8 @@ def submit_test_info():
     hardware_type = request.form['hardware_type']
 
     log_exporter.set_test_details(tester_name, pcb_serial, hardware_provider, hardware_type)
-
     tester_info_submitted = True
+
     return redirect(url_for('home'))
 
 
