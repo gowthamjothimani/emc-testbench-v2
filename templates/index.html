@@ -16,7 +16,7 @@
             <div class="status">
                 <p>CPU: <span class="status-box" id="cpu_usage"> </span></p>
                 <p>Temp: <span class="status-box" id="temp_display">-- °C</span></p>
-                <p>Humidity: <span class="status-box" id="hum_display">-- %</span></p> 
+                <p>Humidity: <span class="status-box" id="hum_display">-- %</span></p>
                 <span id="networkIcon" class="network-icon" onclick="openMQTTConfig()">🔌</span>
                 <button class="dashboard-button" onclick="saveLog()">Save Log</button><nav>
                 <button class="dashboard-button" onclick="openQCModal('passed')">QC PASS</button>
@@ -35,16 +35,16 @@
             <h2>MQTT Configuration</h2>
             <label>Hostname:</label>
             <input type="text" id="mqtt_hostname" value="broker.hivemq.com">
-            
+
             <label>Port:</label>
             <input type="number" id="mqtt_port" value="1883">
-            
+
             <label>Topic:</label>
             <input type="text" id="mqtt_topic" value="emc_test">
-            
+
             <label>Username:</label>
             <input type="text" id="mqtt_username">
-            
+
             <label>Password:</label>
             <input type="password" id="mqtt_password">
 
@@ -107,7 +107,7 @@
                 <p>Badge Fault State: <span class="status-box" id="badgeState">--</span></p>
                 <p>In Reader: <span class="status-box" id="inData">--</span></p>
                 <p>Out Reader: <span class="status-box" id="outData">--</span></p>
-            </div> 
+            </div>
             <div class="row">
                 <button class="dashboard-button" onclick="controlEfuse('efuse_badge_on')">Badge eFuse On</button>
                 <button class="dashboard-cancel-button" onclick="controlEfuse('efuse_badge_off')">Badge eFuse Off</button>

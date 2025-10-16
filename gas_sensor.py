@@ -22,6 +22,13 @@ class GasSensor:
             self.instrument.serial.parity = 'E'
             self.instrument.serial.stopbits = 1
             self.instrument.serial.timeout = 2
+        elif self.sensor_type == "Radius":
+            self.instrument = minimalmodbus.Instrument('/dev/ttyS2', 1)  
+            self.instrument.serial.baudrate = 115200
+            self.instrument.serial.bytesize = 8
+            self.instrument.serial.parity = 'N'
+            self.instrument.serial.stopbits = 1
+            self.instrument.serial.timeout = 2
 
     def read_sensor(self):
         try:
@@ -30,6 +37,9 @@ class GasSensor:
                 return value if isinstance(value, list) and len(value) > 0 else None
             elif self.sensor_type == "Drager X-Zone":
                 value = self.instrument.read_long(29, 3)
+                return value
+            elif self.sensor_type == "Radius":
+                value = self.instrument.read_registers(147,7,4)
                 return value
         except Exception:
             return None

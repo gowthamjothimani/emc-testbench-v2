@@ -9,9 +9,9 @@ h1,h2{
 .navbar {
     display: flex;
     display: flex;
-    flex-wrap: wrap;     
+    flex-wrap: wrap;
     justify-content: center;
-    gap: 15px;      
+    gap: 15px;
     max-width: 100%;
     padding-top: 10px;
     padding-right: 20px;
@@ -40,7 +40,7 @@ h1,h2{
     flex-basis: 0%;
     flex-wrap: wrap;       /* Wrap if space runs out */
     justify-content: center;
-    gap: 15px;      
+    gap: 15px;
   }
 
 .cpu_usage {
@@ -122,44 +122,44 @@ button {
 }
 
 .dashboard-button,.dashboard-cancel-button{
-    background-color: #27282E; 
-    flex: 1 1 auto;       
-    max-width: 200px;     
-    margin: 10px;   
-    border: none; 
-    color: white; 
-    padding: 15px 32px; 
-    text-align: center; 
-    text-decoration: none; 
-    display: inline-block; 
-    font-size: 16px; 
-    margin: 4px 2px; 
-    cursor: pointer; 
+    background-color: #27282E;
+    flex: 1 1 auto;
+    max-width: 200px;
+    margin: 10px;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
     border-radius: 8px;
-    transition: background-color 0.3s ease; 
+    transition: background-color 0.3s ease;
 }
 
 .dashboard-button:hover {
-    background-color: #45a049; 
+    background-color: #45a049;
 }
 .dashboard-cancel-button:hover{
     background-color: crimson;
 }
 .modal {
-    display: none; 
-    position: fixed; 
-    z-index: 1000; 
+    display: none;
+    position: fixed;
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); 
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 
 .modal-content {
     background-color: #f4f4f4;
-    margin: 10% auto; 
+    margin: 10% auto;
     padding: 20px;
     border-radius: 8px;
     width: 40%;
@@ -211,12 +211,12 @@ button {
 }
 
 .network-icon {
-    font-size: 24px; 
-    cursor: pointer; 
+    font-size: 24px;
+    cursor: pointer;
     padding: 8px;
     margin: 0 15px;
-    background-color: #f4f4f4; 
-    border-radius: 5%; 
+    background-color: #f4f4f4;
+    border-radius: 5%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -224,9 +224,9 @@ button {
 }
 
 .network-icon:hover {
-    background-color: #4b72f1; 
+    background-color: #4b72f1;
     color: white;
-    transform: scale(1.1); 
+    transform: scale(1.1);
 }
 
 .network-icon:active {

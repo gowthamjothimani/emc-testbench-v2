@@ -1,5 +1,5 @@
 var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
-       
+
 var selectedSensor = null;
 document.addEventListener("DOMContentLoaded", function () {
     const sensorDropdown = document.getElementById("sensorSelect");
@@ -155,7 +155,7 @@ socket.on('sensor_selected', function (data) {
        function startTest() {
         socket.emit('start_all_tests');
     }
-    
+
     function stopTest() {
         socket.emit('stop_all_tests');
     }
@@ -223,7 +223,7 @@ socket.on('sensor_selected', function (data) {
     }
     updateTempHum();
     setInterval(updateTempHum, 10000);
-    
+
     let qcStatus = null;
 
     function openQCModal(status) {
@@ -239,7 +239,7 @@ socket.on('sensor_selected', function (data) {
             html += formatResult("Temperature", data["system-check"]["temperature"] + " °C");
             html += formatResult("Humidity", data["system-check"]["humidity"] + " %");
             html += formatResult("Gas Sensor", data["gas-status"]["sensor-status"]);
-            
+
             // Efuse ON
             Object.entries(data["efuse-turn-on-status"]).forEach(([k,v]) => {
                 html += formatResult(k.replaceAll("_"," "), v);

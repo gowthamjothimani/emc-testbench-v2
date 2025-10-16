@@ -11,7 +11,7 @@ from emc_board import EMC_Board
 from card_reader import CardReader
 from mqtt_client import MQTTClient
 from gas_sensor import GasSensor
-from log_exporter import LogExporter  
+from log_exporter import LogExporter
 from sensor_reader import get_temp_hum
 
 app = Flask(__name__)
@@ -30,7 +30,7 @@ card_reader = CardReader(socketio, log_exporter)
 
 # ========== GAS SENSOR CONFIGURATION ==========
 gas_test_running = False
-selected_sensor = None 
+selected_sensor = None
 last_sensor_reading = None
 
 def gas_test():
@@ -283,13 +283,13 @@ def handle_relay_update(data):
     status = data.get('status', '')
     log_exporter.set_state("alarm", action, status)
 
-    
+
 # ========== QC STATUS ==============
 @app.route('/qc_status', methods=['POST'])
 def qc_status():
     try:
         data = request.json
-        qc_status = data.get("qc_status") 
+        qc_status = data.get("qc_status")
         hardware_provider = data.get("hardware_provider", "unknown")
         hardware_type = data.get("hardware_type", "unknown")
         serial_num = data.get("serial_number", "0000")
@@ -320,7 +320,7 @@ def qc_status():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-    
+
 @app.route('/device_info', methods=['GET'])
 def device_info():
     try:
