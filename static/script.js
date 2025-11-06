@@ -229,8 +229,7 @@ socket.on('sensor_selected', function (data) {
     function openQCModal(status) {
     document.getElementById("qcTitle").innerText = status === "passed" ? "QC PASSED" : "QC FAILED";
     document.getElementById("qcResult").innerText = "";
-    document.getElementById("deviceInfoModal").style.display = "block";
-
+    document.getElementById("qcModal").style.display = "none";
     // Request latest test log from backend
     fetch('/get_last_log')
         .then(res => res.json())
