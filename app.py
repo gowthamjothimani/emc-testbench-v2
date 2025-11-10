@@ -116,7 +116,7 @@ def tester_info():
 
 @app.route('/submit_test_info', methods=['POST'])
 def submit_test_info():
-    global tester_info_submitted
+    global tester_info_submitted, hardware_provider, hardware_type
     tester_name = request.form['tester_name']
     pcb_serial = request.form['pcb_serial']
     hardware_provider = request.form['hardware_provider']
