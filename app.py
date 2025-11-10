@@ -315,6 +315,7 @@ def qc_status():
         eeprom.write_eeprom(0x0000, list(json_bytes))
 
         eeprom.write_protect(False)
+        log_exporter.set_state("qc", "qc_status", qc_status)
 
         return jsonify({"status": "success", "data": device_info})
     except Exception as e:

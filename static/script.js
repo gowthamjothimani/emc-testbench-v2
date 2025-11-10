@@ -229,6 +229,7 @@ socket.on('sensor_selected', function (data) {
     function openQCModal(status) {
     document.getElementById("qcTitle").innerText = status === "passed" ? "QC PASSED" : "QC FAILED";
     document.getElementById("qcResult").innerText = "";
+    document.getElementById("qcModal").style.display = "block";
 
     // Request latest test log from backend
     fetch('/get_last_log')
@@ -279,21 +280,33 @@ function formatResult(label, value) {
     }
 
     function confirmQC() {
-        fetch('/qc_status', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
+    const qcStatus = document.getElementById("qcResult").getAttribute("data-status");
+
+    fetch('/get_test_info')
+        .then(response => response.json())
+        .then(testInfo => {
+            let serial_number = testInfo.pcb_serial || "0000";
+
+            let qcData = {
+                serial_number: serial_number,
                 qc_status: qcStatus,
-                hardware_provider: "visics",
-                hardware_type: "G6.1.1",
-                serial_number: "VIS-ACU-EMC-G6.1.1-001"
+                tested_date: new Date().toISOString().slice(0, 19).replace('T', ' ')
+            };
+
+            fetch('/qc_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(qcData)
             })
-        }).then(res => res.json())
-        .then(data => {
-            alert("QC Update: " + data.status);
-            closeQCModal();
+            .then(res => res.json())
+            .then(data => {
+                alert("QC Status updated: " + data.status);
+                closeQCModal();
+            })
+            .catch(err => console.error("QC update failed:", err));
         });
-    }
+}
+
 
     function showDeviceInfo() {
         fetch('/device_info')
