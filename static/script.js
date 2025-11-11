@@ -62,23 +62,27 @@ socket.on('sensor_selected', function (data) {
         }
 
             // Card test data update
-            socket.on('in_data', function(data) {
-                        const cardDataElement = document.getElementById('inData');
-                        if (data.in_number) {
-                            cardDataElement.textContent = data.in_number;
-                        } else {
-                            cardDataElement.textContent = '--';
-                        }
-                    });
+            socket.on('in_data', data => {
+                    const el = document.getElementById('inData');
+                    if (data.status === 'working') {
+                        el.style.backgroundColor = 'lightgreen';
+                    } else if (data.status === 'error') {
+                        el.style.backgroundColor = 'lightcoral';
+                    }
+                    el.textContent = data.in_number || data.error || "--";
+                });
+
                 // Card test data update
-                socket.on('out_data', function(data) {
-                        const cardDataElement = document.getElementById('outData');
-                        if (data.out_number) {
-                            cardDataElement.textContent = data.out_number;
-                        } else {
-                            cardDataElement.textContent = '--';
+                socket.on('out_data', data => {
+                        const el = document.getElementById('outData');
+                        if (data.status === 'working') {
+                            el.style.backgroundColor = 'lightgreen';
+                        } else if (data.status === 'error') {
+                            el.style.backgroundColor = 'lightcoral';
                         }
+                        el.textContent = data.in_number || data.error || "--";
                     });
+
                 function controlEfuse(action) {
                     // Step 1: Actually perform the ON/OFF action first
                     fetch(`/control/${action}`)
@@ -365,8 +369,8 @@ function formatResult(label, value) {
         "efuse gas off",
         "Card IN Reader",
         "Card OUT Reader",
-        "lamp sound off",
-        "lamp sound on",
+        "alarm sound off",
+        "alarm sound on",
         "lamp alarm green off",
         "lamp alarm green on",
         "lamp alarm red off",

@@ -70,39 +70,66 @@ class CardReader:
                 self.start_time_out = time.monotonic_ns()
             self.out_value += "1"
 
-    def card_test(self):
-        while self.card_test_running:
-            time.sleep(0.1)
+def card_test(self):
+    while self.card_test_running:
+        time.sleep(0.1)
 
-            # Process IN Reader Data
-            with self.in_value_lock:
-                if self.in_value and (time.monotonic_ns() - self.start_time_in > 500_000_000):
-                    if len(self.in_value) == 26:
-                        result = self.decode_wiegand(self.in_value)
-                        if result:
-                            _, card_number = result
-                            self.socketio.emit('in_data', {'in_number': card_number})
-                            self.log_exporter.set_card_data(in_reader=card_number, out_reader=self.log_exporter.card_reader_data["out-reader"])
-                        else:
-                            self.socketio.emit('in_data', {'error': 'Invalid Wiegand format'})
+        # ---- IN Reader ----
+        with self.in_value_lock:
+            if self.in_value and (time.monotonic_ns() - self.start_time_in > 500_000_000):
+                bit_count = len(self.in_value)
+                if bit_count == 26:
+                    result = self.decode_wiegand(self.in_value)
+                    if result:
+                        _, card_number = result
+                        # ✅ UI update: show number, green background
+                        self.socketio.emit('in_data', {
+                            'in_number': card_number,
+                            'status': 'working'
+                        })
+                        # ✅ Log only status
+                        self.log_exporter.set_card_data(
+                            in_reader="working",
+                            out_reader=self.log_exporter.card_reader_data["out-reader"]
+                        )
                     else:
-                        self.socketio.emit('in_data', {'error': 'Incomplete data', 'raw_data': self.in_value})
-                    self.in_value = ""
+                        self.socketio.emit('in_data', {'error': 'Decode error', 'status': 'error'})
+                        self.log_exporter.set_card_data(in_reader="error", out_reader=self.log_exporter.card_reader_data["out-reader"])
+                elif bit_count > 26:
+                    # Too many bits = invalid
+                    self.socketio.emit('in_data', {'error': 'Invalid length', 'status': 'error'})
+                    self.log_exporter.set_card_data(in_reader="error", out_reader=self.log_exporter.card_reader_data["out-reader"])
 
-            # Process OUT Reader Data
-            with self.out_value_lock:
-                if self.out_value and (time.monotonic_ns() - self.start_time_out > 500_000_000):
-                    if len(self.out_value) == 26:
-                        result = self.decode_wiegand(self.out_value)
-                        if result:
-                            _, card_number = result
-                            self.socketio.emit('out_data', {'out_number': card_number})
-                            self.log_exporter.set_card_data(in_reader=self.log_exporter.card_reader_data["in-reader"], out_reader=card_number)
-                        else:
-                            self.socketio.emit('out_data', {'error': 'Invalid Wiegand format'})
+                # Reset buffer
+                self.in_value = ""
+
+        # ---- OUT Reader ----
+        with self.out_value_lock:
+            if self.out_value and (time.monotonic_ns() - self.start_time_out > 500_000_000):
+                bit_count = len(self.out_value)
+                if bit_count == 26:
+                    result = self.decode_wiegand(self.out_value)
+                    if result:
+                        _, card_number = result
+                        self.socketio.emit('out_data', {
+                            'out_number': card_number,
+                            'status': 'working'
+                        })
+                        self.log_exporter.set_card_data(
+                            in_reader=self.log_exporter.card_reader_data["in-reader"],
+                            out_reader="working"
+                        )
                     else:
-                        self.socketio.emit('out_data', {'error': 'Incomplete data', 'raw_data': self.out_value})
-                    self.out_value = ""
+                        self.socketio.emit('out_data', {'error': 'Decode error', 'status': 'error'})
+                        self.log_exporter.set_card_data(in_reader=self.log_exporter.card_reader_data["in-reader"], out_reader="error")
+                elif bit_count > 26:
+                    self.socketio.emit('out_data', {'error': 'Invalid length', 'status': 'error'})
+                    self.log_exporter.set_card_data(in_reader=self.log_exporter.card_reader_data["in-reader"], out_reader="error")
+
+                # Reset buffer
+                self.out_value = ""
+
+
 
     def start_card_test(self):
         if not self.card_test_running:
