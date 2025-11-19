@@ -17,6 +17,9 @@ class LogExporter:
         self.card_reader_data = {"in-reader": "--", "out-reader": "--"}
         self.env_data = {"temperature": None, "humidity": None, "cpu": None}
         self.test_details = {}
+        self.board_inspection = {"visual": "not tested", "electrical": "not tested"}
+        self.qc_status = "NOT_RUN"
+        self.qc_fail_reasons = []
 
     def update_sensor_status(self, sensor, last_reading):
         if sensor:
@@ -55,18 +58,29 @@ class LogExporter:
         self.card_reader_data["in-reader"] = in_reader
         self.card_reader_data["out-reader"] = out_reader
 
+    def set_qc_status(self, status, reasons=None):
+        self.qc_status = status
+        self.qc_fail_reasons = reasons or []
+
+
     def set_environment_data(self, temperature, humidity, cpu):
         self.env_data["temperature"] = temperature
         self.env_data["humidity"] = humidity
         self.env_data["cpu"] = cpu
 
-    def set_test_details(self, tester_name, pcb_serial, hardware_provider, hardware_type):
+    def set_test_details(self, testername, pcbserial, modelnumber=None, projectdetail=None):
         self.test_details = {
-            "tester_name": tester_name,
-            "pcb_serial": pcb_serial,
-            "hardware_provider": hardware_provider,
-            "hardware_type": hardware_type
+            "testername": testername,
+            "pcbserial": pcbserial,
+            "modelnumber": modelnumber,
+            "projectdetail": projectdetail
         }
+
+    def set_board_inspection(self, board_log):
+            """Save board inspection results into the current log session."""
+            self.board_inspection["visual"] = board_log.get("visual", "no")
+            self.board_inspection["electrical"] = board_log.get("electrical", "no")
+            print("Board inspection saved:", self.board_inspection)
 
     def get_last_log(self):
         return {
@@ -76,6 +90,7 @@ class LogExporter:
                 "humidity": self.env_data["humidity"],
                 "timestamp": time.strftime('%Y-%m-%d %H:%M:%S')
             },
+            "board-inspection-status": self.board_inspection, 
             "gas-status": {
                 "gas-type": self.sensor_type,
                 "sensor-status": self.sensor_status
@@ -84,18 +99,21 @@ class LogExporter:
             "efuse-turn-off-status": self.efuse_off_states,
             "card-reader-status": self.card_reader_data,
             "relay-status": self.relay_states,
-            "alarm-status": self.alarm_states
+            "alarm-status": self.alarm_states,
+             "qc_status": self.qc_status,
+             "qc_fail_reasons": self.qc_fail_reasons
         }
 
     def export_log(self):
         data = {
             "test_details": self.test_details,
             "system-check": {
-                "cpu-usage": self.env_data["cpu"],
+                "cpu-usage": self.env_data["cpu"],  
                 "temperature": self.env_data["temperature"],
                 "humidity": self.env_data["humidity"],
                 "timestamp": time.strftime('%Y-%m-%d %H:%M:%S')
-            },
+            }, 
+            "board-inspection-status": self.board_inspection, 
             "gas-status": {
                 "gas-type": self.sensor_type,
                 "sensor-status": self.sensor_status
@@ -104,6 +122,8 @@ class LogExporter:
             "efuse-turn-off-status": self.efuse_off_states,
             "card-reader-status": self.card_reader_data,
             "relay-status": self.relay_states,
-            "alarm-status": self.alarm_states
+            "alarm-status": self.alarm_states,
+            "qc_status": self.qc_status,
+           "qc_fail_reasons": self.qc_fail_reasons
         }
         self.mqtt_client.publish_data(data)

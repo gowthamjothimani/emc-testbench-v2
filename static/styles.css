@@ -250,6 +250,31 @@ button {
     font-size: 15px;
     line-height: 1.4;
 }
+
+/* ✅ Scrollable QC Modal */
+#qcModal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  max-width: 850px;
+  background-color: #fff;
+  border: 2px solid #222;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  overflow: hidden;
+}
+
+#qcModal .modal-content {
+  max-height: 70vh;   /* Fixed height */
+  overflow-y: auto;   /* Scrollable */
+  padding-right: 10px;
+}
+
 /* Device Info Modal Styling */
 .device-info-table {
     display: flex;
@@ -292,4 +317,45 @@ button {
 .qc-fail {
     color: #dc3545;
     font-weight: bold;
+}
+.inspection-section {
+  margin-bottom: 20px;
+  background: #f7f7f7;
+  border-radius: 8px;
+  padding: 10px 15px;
+}
+
+.inspection-section h3 {
+  color: #333;
+}
+
+#boardTab button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+#boardTab button:hover {
+  background-color: #0056b3;
+}
+#board {
+    text-align: center;
+}
+
+#board label {
+    font-size: 16px;
+    margin: 0 10px;
+}
+
+#board h3 {
+    margin-bottom: 5px;
+    color: #333;
+}
+
+#board p {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #555;
 }

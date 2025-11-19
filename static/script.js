@@ -230,107 +230,117 @@ socket.on('sensor_selected', function (data) {
 
     let qcStatus = null;
 
- function openQCModal(status) {
-    const qcTitle = document.getElementById("qcTitle");
-    qcTitle.innerText = status === "passed" ? "QC PASSED" : "QC FAILED";
+function openQCModal() {
     document.getElementById("qcResult").innerText = "";
     document.getElementById("qcModal").style.display = "block";
-    document.getElementById("qcResult").setAttribute("data-status", status);
+    document.getElementById("qcResultsList").innerHTML = "<p>Loading...</p>";
+    document.getElementById("qcSummaryBanner")?.remove();
 
-    // Fetch last test log first
-    fetch('/get_last_log')
-        .then(res => res.json())
-        .then(logData => {
-            // Then fetch live environment data
-            fetch('/read_sensors')
-                .then(res => res.json())
-                .then(envData => {
-                    const temperature = envData.temperature ?? logData["system-check"]["temperature"];
-                    const humidity = envData.humidity ?? logData["system-check"]["humidity"];
-                    const cpuUsage = logData["system-check"]["cpu-usage"] ?? "--";
+    // Fetch last test log & live env data
+    Promise.all([
+        fetch('/get_last_log').then(r => r.json()),
+        fetch('/read_sensors').then(r => r.json())
+    ]).then(([logData, envData]) => {
+        // normalize values
+        const cpu = logData["system-check"]["cpu-usage"] ?? "--";
+        const temp = envData.temperature ?? logData["system-check"]["temperature"] ?? "--";
+        const hum  = envData.humidity ?? logData["system-check"]["humidity"] ?? "--";
 
-                    let html = "<ul>";
+        const items = [];
 
-                    // Display general system info (no checkmarks)
-                    html += `<li><strong>CPU Usage:</strong> ${cpuUsage}%</li>`;
-                    html += `<li><strong>Temperature:</strong> ${temperature ?? "--"} °C</li>`;
-                    html += `<li><strong>Humidity:</strong> ${humidity ?? "--"} %</li>`;
-                    html += `<li><strong>Timestamp:</strong> ${logData["system-check"]["timestamp"]}</li>`;
+        // Required checks - align with your list
+        items.push({ key: "system-check-cpu", label: `CPU Usage: ${cpu}`, ok: cpu !== null && cpu !== "--" });
+        items.push({ key: "system-check-temp", label: `Temperature: ${temp}`, ok: temp !== null && temp !== "--" });
+        items.push({ key: "system-check-hum",  label: `Humidity: ${hum}`, ok: hum !== null && hum !== "--" });
 
-                    // Function to generate ✅ / ❌ mark
-                    const makeMark = (val) => {
-                        if (val === "working" || val === "Good" || val === "12V") return "✅";
-                        if (val === "error" || val === "Error" || val === "0V") return "❌";
-                        return "";
-                    };
+        // Board inspections
+        const board = logData["board-inspection-status"] || {};
+        items.push({ key: "visual", label: `Visual Inspection: ${board.visual}`, ok: board.visual === "yes" });
+        items.push({ key: "electrical", label: `Electrical Inspection: ${board.electrical}`, ok: board.electrical === "yes" });
 
-                    // Gas sensor
-                    html += `<li><strong>Gas Sensor:</strong> ${makeMark(logData["gas-status"]["sensor-status"])} (${logData["gas-status"]["sensor-status"]})</li>`;
+        // Gas sensor
+        const gas = (logData["gas-status"] && logData["gas-status"]["sensor-status"]) || "error";
+        items.push({ key: "gas", label: `Gas Sensor: ${gas}`, ok: gas === "working" });
 
-                    // eFuse ON states
-                    for (const [key, val] of Object.entries(logData["efuse-turn-on-status"] || {})) {
-                        html += `<li><strong>${key.replaceAll("_"," ")}:</strong> ${makeMark(val)} (${val})</li>`;
-                    }
+        // eFuse ON states - require at least to have been toggled and "working"
+        const onStates = logData["efuse-turn-on-status"] || {};
+        for (const k in onStates) {
+            items.push({ key: `efuse_on_${k}`, label: `${k.replaceAll("_"," ")} (ON): ${onStates[k]}`, ok: onStates[k] === "working" });
+        }
+        const offStates = logData["efuse-turn-off-status"] || {};
+        for (const k in offStates) {
+            items.push({ key: `efuse_off_${k}`, label: `${k.replaceAll("_"," ")} (OFF): ${offStates[k]}`, ok: offStates[k] === "working" });
+        }
 
-                    // eFuse OFF states
-                    for (const [key, val] of Object.entries(logData["efuse-turn-off-status"] || {})) {
-                        html += `<li><strong>${key.replaceAll("_"," ")}:</strong> ${makeMark(val)} (${val})</li>`;
-                    }
+        // Card readers
+        const inReader = (logData["card-reader-status"] && logData["card-reader-status"]["in-reader"]) || "--";
+        const outReader = (logData["card-reader-status"] && logData["card-reader-status"]["out-reader"]) || "--";
+        items.push({ key: "card_in", label: `Card IN Reader: ${inReader}`, ok: inReader && inReader !== "--" });
+        items.push({ key: "card_out", label: `Card OUT Reader: ${outReader}`, ok: outReader && outReader !== "--" });
 
-                    // Card reader info — no tick/cross
-                    html += `<li><strong>Card IN Reader:</strong> ${logData["card-reader-status"]["in-reader"] || "--"}</li>`;
-                    html += `<li><strong>Card OUT Reader:</strong> ${logData["card-reader-status"]["out-reader"] || "--"}</li>`;
+        // Relay & Alarm states (lamp on/off)
+        const relays = logData["relay-status"] || {};
+        for (const k in relays) {
+            items.push({ key: `relay_${k}`, label: `${k.replaceAll("_"," ")}: ${relays[k]}`, ok: relays[k] === "working" });
+        }
+        const alarms = logData["alarm-status"] || {};
+        for (const k in alarms) {
+            items.push({ key: `alarm_${k}`, label: `${k.replaceAll("_"," ")}: ${alarms[k]}`, ok: alarms[k] === "working" });
+        }
 
-                    // Relay status
-                    for (const [key, val] of Object.entries(logData["relay-status"] || {})) {
-                        html += `<li><strong>${key.replaceAll("_"," ")}:</strong> ${makeMark(val)} (${val})</li>`;
-                    }
-
-                    // Alarm status
-                    for (const [key, val] of Object.entries(logData["alarm-status"] || {})) {
-                        html += `<li><strong>${key.replaceAll("_"," ")}:</strong> ${makeMark(val)} (${val})</li>`;
-                    }
-
-                    html += "</ul>";
-                    document.getElementById("qcResultsList").innerHTML = html;
-                    updateQCSummaryBanner();
-
-                    // Store QC status for confirm step
-                    document.getElementById("qcResult").setAttribute("data-status", status);
-                })
-                .catch(err => {
-                    console.error("Error fetching live sensor data:", err);
-                });
-        })
-        .catch(err => {
-            console.error("Error loading QC log:", err);
-            document.getElementById("qcResultsList").innerHTML = "<p>Failed to load test results.</p>";
+        // Build HTML list and determine pass/fail
+        let html = "<ul>";
+        const missing = [];
+        const failed = [];
+        items.forEach(it => {
+            const mark = it.ok ? "✅" : "❌";
+            html += `<li><strong>${it.label}</strong> ${mark}</li>`;
+            if (!it.ok) {
+                // decide if missing or failed
+                if (it.label.includes("--") || it.label.toLowerCase().includes("undefined")) {
+                    missing.push(it.label);
+                } else {
+                    failed.push(it.label);
+                }
+            }
         });
+        html += "</ul>";
+
+        // QC decision:
+        const allOk = failed.length === 0 && missing.length === 0;
+        const banner = document.createElement("div");
+        banner.id = "qcSummaryBanner";
+        banner.style.padding = "10px";
+        banner.style.borderRadius = "6px";
+        banner.style.marginBottom = "10px";
+        banner.style.textAlign = "center";
+
+        if (allOk) {
+            banner.innerText = "✅ All tests passed successfully — ready to confirm QC.";
+            banner.style.backgroundColor = "#00c853";
+            banner.style.color = "white";
+            document.getElementById("qcTitle").innerText = "QC PASSED";
+            document.getElementById("qcResult").setAttribute("data-status", "passed");
+        } else {
+            banner.innerText = "❌ Some tests failed or incomplete — review before confirming.";
+            banner.style.backgroundColor = "#ff4c4c";
+            banner.style.color = "white";
+            document.getElementById("qcTitle").innerText = "QC FAILED";
+            document.getElementById("qcResult").setAttribute("data-status", "failed");
+        }
+
+        document.getElementById("qcResultsList").innerHTML = html;
+        document.getElementById("qcModal").querySelector(".modal-content").prepend(banner);
+        // store failure lists on element for confirm step
+        document.getElementById("qcModal").dataset.failed = JSON.stringify(failed);
+        document.getElementById("qcModal").dataset.missing = JSON.stringify(missing);
+
+    }).catch(err => {
+        console.error("QC load error:", err);
+        document.getElementById("qcResultsList").innerHTML = "<p style='color:red;'>Failed to load test results.</p>";
+    });
 }
 
-function updateQCSummaryBanner() {
-    const listItems = Array.from(document.querySelectorAll("#qcResultsList li"));
-    const banner = document.getElementById("qcSummaryBanner");
-    if (!banner) return;
-
-    const hasError = listItems.some(li =>
-        li.textContent.includes("❌") || li.textContent.includes("error") || li.textContent.includes("--")
-    );
-
-    if (hasError) {
-        banner.innerHTML = "❌ Some tests failed or incomplete — review before confirming.";
-        banner.style.backgroundColor = "#ff4c4c";
-        banner.style.color = "white";
-    } else {
-        banner.innerHTML = "✅ All tests passed successfully — ready to confirm QC.";
-        banner.style.backgroundColor = "#00c853";
-        banner.style.color = "white";
-    }
-    banner.style.padding = "10px";
-    banner.style.borderRadius = "6px";
-    banner.style.marginBottom = "10px";
-    banner.style.textAlign = "center";
-}
 
 function formatResult(label, value) {
     let icon = (value && value.toString().toLowerCase() === "working") ? "✅" : "❌";
@@ -342,119 +352,64 @@ function formatResult(label, value) {
         document.getElementById("qcModal").style.display = "none";
     }
 
-   function confirmQC() {
-    const qcStatus = document.getElementById("qcResult").getAttribute("data-status");
-    const listElement = document.getElementById("qcResultsList");
-    if (!listElement) {
-        alert("No test results available to validate.");
+function confirmQC() {
+    const status = document.getElementById("qcResult").getAttribute("data-status") || "failed";
+    const failed = JSON.parse(document.getElementById("qcModal").dataset.failed || "[]");
+    const missing = JSON.parse(document.getElementById("qcModal").dataset.missing || "[]");
+
+    // If QC is passed but we have problems, block
+    if (status === "passed" && (failed.length > 0 || missing.length > 0)) {
+        alert("⚠ Cannot mark QC as PASSED — some tests failed or are missing.");
         return;
     }
 
-    // Gather all test items
-    const listItems = Array.from(listElement.querySelectorAll("li"));
-    const items = listItems.map(li => li.textContent);
-
-    // Define mandatory checks
-    const requiredChecks = [
-        "CPU Usage",
-        "Temperature",
-        "Humidity",
-        "Timestamp",
-        "Gas Sensor",
-        "efuse alarm on",
-        "efuse badge on",
-        "efuse gas on",
-        "efuse alarm off",
-        "efuse badge off",
-        "efuse gas off",
-        "Card IN Reader",
-        "Card OUT Reader",
-        "alarm sound off",
-        "alarm sound on",
-        "lamp alarm green off",
-        "lamp alarm green on",
-        "lamp alarm red off",
-        "lamp alarm red on",
-        "lamp badge off",
-        "lamp badge on"
-    ];
-
-    // Reset any previous highlights
-    listItems.forEach(li => li.style.color = "");
-
-    // Identify missing and failed
-    const missing = requiredChecks.filter(check => 
-        !items.some(i => i.toLowerCase().includes(check.toLowerCase()))
-    );
-
-    const failed = listItems.filter(li =>
-        li.textContent.includes("❌") || li.textContent.includes("error") || li.textContent.includes("--")
-    );
-
-    // Highlight missing and failed
-    missing.forEach(check => {
-        const li = document.createElement("li");
-        li.textContent = check + " — missing";
-        li.style.color = "red";
-        listElement.appendChild(li);
-    });
-    failed.forEach(li => li.style.color = "red");
-     updateQCSummaryBanner();
-    const hasMissing = missing.length > 0;
-    const hasFailed = failed.length > 0;
-
-    // Validation logic
-    if (qcStatus === "passed") {
-        if (hasMissing || hasFailed) {
-            const msg = [
-                "⚠️ QC PASS not allowed — some tests are incomplete or failed.",
-                hasMissing ? `\n🟥 Missing: ${missing.join(", ")}` : "",
-                hasFailed ? `\n🟥 Failed: ${failed.length} item(s)` : ""
-            ].join("");
-            alert(msg);
-            return;
-        }
-    } else if (qcStatus === "failed") {
-        // If everything looks good but user clicked fail, block it
-        if (!hasMissing && !hasFailed) {
-            alert("⚠️ QC FAIL not allowed — all tests passed successfully.");
+    // If QC is failed but no failed or missing items reported, warn operator
+    if (status === "failed" && failed.length === 0 && missing.length === 0) {
+        if (!confirm("QC is marked FAILED but no failing items were detected. Proceed to write FAILED QC anyway?")) {
             return;
         }
     }
 
-    // ✅ Validation passed — proceed with EEPROM write
+    // If failed/missing items exist, show them and ask for operator confirmation to proceed as failed
+    if (status === "failed" && (failed.length > 0 || missing.length > 0)) {
+        const reasons = failed.concat(missing);
+        if (!confirm("QC failures detected:\n\n" + reasons.join("\n") + "\n\nProceed to save QC as FAILED?")) {
+            return;
+        }
+    }
+
+    // Fetch tester info for EEPROM fields
     fetch("/get_test_info")
-        .then(res => res.json())
-        .then(testInfo => {
+        .then(r => r.json())
+        .then(info => {
             const payload = {
-                qc_status: qcStatus.toUpperCase(),
-                hardware_provider: testInfo.hardware_provider,
-                hardware_type: testInfo.hardware_type,
-                serial_number: testInfo.pcb_serial
+                uuid: info.pcbserial || info.pcb_serial || "UNKNOWN",
+                hw: info.modelnumber || info.model_number || "UNKNOWN",
+                timestamp: new Date().toISOString(),
+                qc_status: (status === "passed") ? "PASSED" : "FAILED",
+                qc_fail_reasons: failed.concat(missing),
+                full_log: null // server will fetch via log_exporter if not provided
             };
 
-            return fetch("/qc_status", {
+            return fetch("/write_eeprom_full", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(payload)
             });
         })
-        .then(res => res.json())
-        .then(response => {
-            if (response.status === "success") {
-                alert("✅ QC " + qcStatus.toUpperCase() + " successfully recorded!");
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === "success") {
+                alert("QC recorded to EEPROM: " + res.device_info.qc_status);
                 closeQCModal();
             } else {
-                alert("❌ Error saving QC status: " + (response.message || "Unknown error"));
+                alert("Failed to write EEPROM: " + (res.message || JSON.stringify(res)));
             }
         })
         .catch(err => {
-            console.error("QC confirm error:", err);
-            alert("❌ Failed to confirm QC: " + err);
+            alert("Error while confirming QC: " + err);
         });
 }
-
-
 
     function showDeviceInfo() {
     fetch("/device_info")
@@ -495,28 +450,35 @@ function formatResult(label, value) {
         document.getElementById("deviceInfoModal").style.display = "none";
     }
 
-    function confirmQCStatus(qcStatus) {
-    fetch('/get_test_info')
-        .then(response => response.json())
-        .then(testInfo => {
-            // Build final serial number dynamically
-            let providerCode = testInfo.hardware_provider === "Visics" ? "VIS" : "ORION";
-            let serial_number = `${providerCode}-${testInfo.hardware_type}-${testInfo.pcb_serial}`;
+    
+function saveBoardInspection() {
+    const visual = document.querySelector('input[name="visual"]:checked');
+    const electrical = document.querySelector('input[name="electrical"]:checked');
 
-            let qcData = {
-                serial_number: serial_number,
-                qc_status: qcStatus,
-                tested_date: new Date().toISOString().slice(0, 19).replace('T', ' ')
-            };
+    if (!visual || !electrical) {
+        alert("Please answer both inspection questions before saving.");
+        return;
+    }
 
-            // Send to backend to write EEPROM
-            fetch('/qc_status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(qcData)
-            })
-            .then(r => r.json())
-            .then(res => alert(res.message))
-            .catch(err => console.error("QC update failed:", err));
-        });
+    const payload = {
+        visual: visual.value === "yes" ? "yes" : "no",
+        electrical: electrical.value === "yes" ? "yes" : "no"
+    };
+
+    fetch("/save_board_inspection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            alert("✅ Board inspection saved successfully!");
+        } else {
+            alert("❌ Error saving inspection: " + data.message);
+        }
+    })
+    .catch(err => {
+        alert("Error: " + err.message);
+    });
 }

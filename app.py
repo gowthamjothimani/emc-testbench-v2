@@ -6,6 +6,7 @@ from eeprom import EEPROM
 import json
 from datetime import datetime
 import time
+import math
 import psutil
 from emc_board import EMC_Board
 from card_reader import CardReader
@@ -97,6 +98,24 @@ def system_status():
         socketio.emit('update_status', {'cpu': cpu_usage})
         time.sleep(10)
 
+def _clear_eeprom_range(start_addr, end_addr, block_size=128):
+    """
+    Clear EEPROM region by writing 0x00 (or 0xFF if you want erased state) across the range.
+    Writes in chunks so large ranges don't cause single huge writes.
+    """
+    length = end_addr - start_addr
+    if length <= 0:
+        return
+    chunk = [0x00] * block_size
+    addr = start_addr
+    while addr < end_addr:
+        remaining = end_addr - addr
+        write_len = min(block_size, remaining)
+        eeprom.write_protect(True)
+        eeprom.write_eeprom(addr, chunk[:write_len])
+        eeprom.write_protect(False)
+        addr += write_len
+
 
 # ========== TEMP & HUM SENSOR DATA =========
 @app.route('/read_sensors')
@@ -114,20 +133,87 @@ def home():
 def tester_info():
     return render_template('tester_info.html')
 
-@app.route('/submit_test_info', methods=['POST'])
-def submit_test_info():
-    global tester_info_submitted, hardware_provider, hardware_type
-    tester_name = request.form['tester_name']
-    pcb_serial = request.form['pcb_serial']
-    hardware_provider = request.form['hardware_provider']
-    hardware_type = request.form['hardware_type']
+@app.route('/submittestinfo', methods=['POST'])
+def submittestinfo():
+    global tester_info_submitted,testername,pcbserial,modelnumber,projectdetail
+    testername = request.form.get('testername')
+    pcbserial = request.form.get('serialnumber')
+    modelnumber = request.form.get('modelnumber')
+    projectdetail = request.form.get('projectdetail')
 
-    log_exporter.set_test_details(tester_name, pcb_serial, hardware_provider, hardware_type)
+    # Update LogExporter test details accordingly
+    log_exporter.set_test_details(
+        testername=testername,
+        pcbserial=pcbserial,
+        modelnumber=modelnumber,
+        projectdetail=projectdetail
+    )
+    # Store in global state if needed
     tester_info_submitted = True
-
+    # Redirect to main app page to start tests
     return redirect(url_for('home'))
 
 
+@app.route('/write_eeprom_full', methods=['POST'])
+def write_eeprom_full():
+    try:
+        payload = request.get_json() or {}
+        uuid = payload.get("uuid", "UNKNOWN")
+        hw = payload.get("hw", "UNKNOWN")
+        timestamp = payload.get("timestamp") or datetime.now().isoformat()
+        qc_status = payload.get("qc_status", "FAILED")
+        qc_reasons = payload.get("qc_fail_reasons", [])
+        full_log = payload.get("full_log")
+
+        device_info = {
+            "UUID": uuid,
+            "HW": hw,
+            "timestamp": timestamp,
+            "qc_status": qc_status
+        }
+
+        if not full_log:
+            full_log = log_exporter.get_last_log()
+
+        full_log["qc_status"] = qc_status
+        if qc_reasons:
+            full_log["qc_fail_reasons"] = qc_reasons
+
+        DEV_INFO_START = 0x0000
+        DEV_INFO_END   = 0x0200   # exclusive
+        LOG_START       = 0x0220
+        LOG_END         = 0x0800   # exclusive
+
+        # 1) clear device area
+        _clear_eeprom_range(DEV_INFO_START, DEV_INFO_END)
+
+        info_bytes = json.dumps(device_info).encode("utf-8")
+        eeprom.write_protect(True)
+        eeprom.write_eeprom(DEV_INFO_START, list(info_bytes))
+        eeprom.write_protect(False)
+
+        _clear_eeprom_range(LOG_START, LOG_END)
+
+        log_bytes = json.dumps(full_log, default=str).encode("utf-8")
+        # Write in chunks
+        chunk_size = 128
+        addr = LOG_START
+        i = 0
+        while i < len(log_bytes):
+            chunk = list(log_bytes[i:i+chunk_size])
+            eeprom.write_protect(True)
+            eeprom.write_eeprom(addr, chunk)
+            eeprom.write_protect(False)
+            addr += len(chunk)
+            i += chunk_size
+        log_exporter.set_qc_status(qc_status, qc_reasons)
+        log_exporter.set_state("qc", "qc_status", qc_status)
+        log_exporter.set_state("qc", "qc_reasons", qc_reasons)
+    
+        return jsonify({"status": "success", "message": "EEPROM written", "device_info": device_info})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 # ========== SENSOR SELECTION ==========
 @socketio.on('select_gas_sensor')
 def select_gas_sensor(data):
@@ -231,6 +317,29 @@ def alarm_sound_on():
 def alarm_sound_off():
     controller.turn_off_alarm_sound()
     return 'Alarm Sound Off'
+
+@app.route('/save_board_inspection', methods=['POST'])
+def save_board_inspection():
+    data = request.get_json()
+    visual = data.get("visual", "error")
+    electrical = data.get("electrical", "error")
+    board_log = {
+        "visual": visual,
+        "electrical": electrical
+    }
+    try:
+        log_exporter.set_board_inspection(board_log)
+        return jsonify({
+            "status": "success",
+            "message": "Board inspection results saved successfully."
+        })
+    except Exception as e:
+        print("Error saving board inspection log:", e)
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to save board inspection log: {e}"
+        })
+
 
 # ========== MQTT CONFIGURATION ==========
 @app.route('/get_mqtt_config', methods=['GET'])

@@ -18,9 +18,7 @@
                 <p>Temp: <span class="status-box" id="temp_display">-- °C</span></p>
                 <p>Humidity: <span class="status-box" id="hum_display">-- %</span></p>
                 <span id="networkIcon" class="network-icon" onclick="openMQTTConfig()">🔌</span>
-                <button class="dashboard-button" onclick="saveLog()">Save Log</button><nav>
-                <button class="dashboard-button" onclick="openQCModal('passed')">QC PASS</button>
-                <button class="dashboard-button" onclick="openQCModal('failed')">QC FAIL</button>
+                <button class="dashboard-button onclick="openQCModal()">QC STATUS</button>
                 <button class="dashboard-button" onclick="exportLog()">Export Log</button>
                 <button class="dashboard-button" onclick="showDeviceInfo()">Board Info</button>
                 <button class="dashboard-button" id="startTestBtn" onclick="startTest()">Start Test</button>
@@ -78,6 +76,7 @@
             <button class="tab-button" onclick="showTab('gasTab')">Gas</button>
             <button class="tab-button" onclick="showTab('cardTab')">Card</button>
             <button class="tab-button" onclick="showTab('alarmTab')">Alarm</button>
+            <button class="tab-button" onclick="showTab('board-tab')">Board</button>
         </div>
 
         <!--Gas Block-->
@@ -137,5 +136,39 @@
                 <button class="dashboard-cancel-button" onclick="controlAlarm('alarm_sound_off')">Alarm Sound Off</button>
             </div>
         </div>
+
+      <div id="board-tab" class="tab">
+        <h2 style="text-align:center; margin-top:10px;">Board Inspection</h2>
+
+        <div style="display:flex; flex-direction:column; align-items:center; margin-top:20px;">
+            
+            <div style="margin-bottom:25px; text-align:center;">
+            <h3>1️⃣ Visual Inspection</h3>
+            <p>Confirm PCB board has no damage?</p>
+            <div>
+                <label><input type="radio" name="visual" value="yes"> Yes</label>
+                <label style="margin-left:20px;"><input type="radio" name="visual" value="no"> No</label>
+            </div>
+            </div>
+
+            <div style="margin-bottom:25px; text-align:center;">
+            <h3>2️⃣ Electrical Inspection</h3>
+            <p>All basic electrical checks completed?</p>
+            <div>
+                <label><input type="radio" name="electrical" value="yes"> Yes</label>
+                <label style="margin-left:20px;"><input type="radio" name="electrical" value="no"> No</label>
+            </div>
+            </div>
+
+            <button 
+            onclick="saveBoardInspection()" 
+            style="background-color:#007bff; color:white; border:none; border-radius:6px; padding:10px 20px; cursor:pointer;">
+            Save Inspection
+            </button>
+        </div>
+        </div>
+
+
+
     </body>
 </html>
