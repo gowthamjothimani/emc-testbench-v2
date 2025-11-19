@@ -80,7 +80,7 @@ socket.on('sensor_selected', function (data) {
                         } else if (data.status === 'error') {
                             el.style.backgroundColor = 'lightcoral';
                         }
-                        el.textContent = data.in_number || data.error || "--";
+                        el.textContent = data.out_number || data.error || "--";
                     });
 
                 function controlEfuse(action) {
