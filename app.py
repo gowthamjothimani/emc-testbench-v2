@@ -98,6 +98,18 @@ def system_status():
         socketio.emit('update_status', {'cpu': cpu_usage})
         time.sleep(10)
 
+def safe_clean(raw):
+    if not raw:
+        return b""
+    arr = bytearray(raw)
+
+    while arr and (arr[-1] == 0xFF or arr[-1] == 0x00):
+        arr.pop()
+
+    return bytes(arr)
+
+
+
 def _clear_eeprom_range(start_addr, end_addr, block_size=128):
     """
     Clear EEPROM region by writing 0x00 (or 0xFF if you want erased state) across the range.
@@ -115,6 +127,7 @@ def _clear_eeprom_range(start_addr, end_addr, block_size=128):
         eeprom.write_eeprom(addr, chunk[:write_len])
         eeprom.write_protect(False)
         addr += write_len
+
 
 
 # ========== TEMP & HUM SENSOR DATA =========
@@ -165,6 +178,7 @@ def write_eeprom_full():
         qc_reasons = payload.get("qc_fail_reasons", [])
         full_log = payload.get("full_log")
 
+        # ----------- Build Device Info -----------
         device_info = {
             "UUID": uuid,
             "HW": hw,
@@ -172,6 +186,7 @@ def write_eeprom_full():
             "qc_status": qc_status
         }
 
+        # ----------- Build Log -----------
         if not full_log:
             full_log = log_exporter.get_last_log()
 
@@ -179,41 +194,66 @@ def write_eeprom_full():
         if qc_reasons:
             full_log["qc_fail_reasons"] = qc_reasons
 
-        DEV_INFO_START = 0x0000
-        DEV_INFO_END   = 0x0200   # exclusive
-        LOG_START       = 0x0220
-        LOG_END         = 0x0800   # exclusive
+        # ----------- Combine Into Single JSON -----------
+        combined = {
+            "device_info": device_info,
+            "log_report": full_log
+        }
 
-        # 1) clear device area
-        _clear_eeprom_range(DEV_INFO_START, DEV_INFO_END)
+        combined_bytes = json.dumps(combined, default=str).encode("utf-8")
 
-        info_bytes = json.dumps(device_info).encode("utf-8")
-        eeprom.write_protect(True)
-        eeprom.write_eeprom(DEV_INFO_START, list(info_bytes))
-        eeprom.write_protect(False)
+        # EEPROM region for combined data
+        EEPROM_START = 0x0200
+        EEPROM_END   = 0x0900
+        EEPROM_SIZE  = EEPROM_END - EEPROM_START
 
-        _clear_eeprom_range(LOG_START, LOG_END)
+        # ------------- CLEAR EEPROM BLOCK -------------
+        _clear_eeprom_range(EEPROM_START, EEPROM_END)
 
-        log_bytes = json.dumps(full_log, default=str).encode("utf-8")
-        # Write in chunks
-        chunk_size = 128
-        addr = LOG_START
-        i = 0
-        while i < len(log_bytes):
-            chunk = list(log_bytes[i:i+chunk_size])
+        # ------------- PAGE-SAFE WRITE -------------
+        PAGE = 32
+        addr = EEPROM_START
+        idx = 0
+
+        while idx < len(combined_bytes):
+            chunk = list(combined_bytes[idx: idx + PAGE])
             eeprom.write_protect(True)
             eeprom.write_eeprom(addr, chunk)
             eeprom.write_protect(False)
             addr += len(chunk)
-            i += chunk_size
-        log_exporter.set_qc_status(qc_status, qc_reasons)
-        log_exporter.set_state("qc", "qc_status", qc_status)
-        log_exporter.set_state("qc", "qc_reasons", qc_reasons)
-    
-        return jsonify({"status": "success", "message": "EEPROM written", "device_info": device_info})
+            idx += PAGE
+
+        # ----------- Pad Remaining Space -----------
+        written_len = len(combined_bytes)
+        if written_len < EEPROM_SIZE:
+            pad_len = EEPROM_SIZE - written_len
+            eeprom.write_protect(True)
+            eeprom.write_eeprom(EEPROM_START + written_len, [0xFF] * pad_len)
+            eeprom.write_protect(False)
+
+        # ----------- DEBUG READBACK -----------
+        raw = eeprom.read_eeprom(EEPROM_START, EEPROM_SIZE)
+        cleaned = bytes([b for b in raw if b not in (0x00, 0xFF)])
+
+        print("\n========== EEPROM COMBINED JSON DEBUG ==========")
+        print("RAW:", list(raw[:200]))
+        try:
+            print("CLEAN:", cleaned.decode())
+        except:
+            print("CLEAN: <Decode Error>")
+        print("================================================\n")
+
+        return jsonify({
+            "status": "success",
+            "message": "Single-block EEPROM written successfully",
+            "device_info": device_info
+        })
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+
 # ========== SENSOR SELECTION ==========
 @socketio.on('select_gas_sensor')
 def select_gas_sensor(data):
@@ -398,53 +438,53 @@ def handle_relay_update(data):
 def qc_status():
     try:
         data = request.json
-        qc_status = data.get("qc_status")
-        hardware_provider = data.get("hardware_provider", "unknown")
-        hardware_type = data.get("hardware_type", "unknown")
-        serial_num = data.get("serial_number", "0000")
+        qc_status = data.get("qc_status", "FAILED")
 
-        provider_map = {
-            "VISICS": "VIS",
-            "Total Safety": "ORION"
-        }
-        provider_prefix = provider_map.get(hardware_provider, hardware_provider.upper())
-
-        final_serial = f"{provider_prefix}-{hardware_type}-{serial_num}"
-
-        device_info = {
-            "serial_number": final_serial,
-            "qc_status": qc_status,
-            "tested_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-
-        eeprom.write_protect(True)
-        eeprom.write_eeprom(0x0000, [0xFF] * 250)
-
-        json_bytes = json.dumps(device_info).encode("utf-8")
-        eeprom.write_eeprom(0x0000, list(json_bytes))
-
-        eeprom.write_protect(False)
+        # Just record inside log_exporter, nothing else
         log_exporter.set_state("qc", "qc_status", qc_status)
 
-        return jsonify({"status": "success", "data": device_info})
+        return jsonify({
+            "status": "success",
+            "message": "QC status recorded (no EEPROM writes)",
+            "qc_status": qc_status
+        })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 @app.route('/device_info', methods=['GET'])
 def device_info():
     try:
-        raw_data = eeprom.read_eeprom(0x0000, 250)
-        # Strip trailing 0xFF
-        clean_bytes = bytes([b for b in raw_data if b != 0xFF])
-        if not clean_bytes:
-            return jsonify({"status": "empty", "message": "No data in EEPROM"})
+        EEPROM_START = 0x0200
+        EEPROM_END   = 0x0900
+        EEPROM_SIZE  = EEPROM_END - EEPROM_START
 
-        # Decode JSON
-        device_info = json.loads(clean_bytes.decode("utf-8"))
-        return jsonify({"status": "success", "data": device_info})
+        raw = eeprom.read_eeprom(EEPROM_START, EEPROM_SIZE)
+        cleaned = safe_clean(raw)
+
+        if not cleaned:
+            return jsonify({"status": "success", "device_info": {}, "log_report": {}})
+
+        try:
+            combined = json.loads(cleaned.decode("utf-8"))
+        except Exception as e:
+            return jsonify({
+                "status": "success",
+                "device_info": {"error": f"Invalid JSON: {e}"},
+                "log_report": {}
+            })
+
+        return jsonify({
+            "status": "success",
+            "device_info": combined.get("device_info", {}),
+            "log_report": combined.get("log_report", {})
+        })
+
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)})
+
+
 
 @app.route('/get_test_info', methods=['GET'])
 def get_test_info():

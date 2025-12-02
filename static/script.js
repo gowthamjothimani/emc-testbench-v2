@@ -418,23 +418,33 @@ function confirmQC() {
             const modal = document.getElementById("deviceInfoModal");
             const content = document.getElementById("deviceInfoData");
 
-            if (data.status === "success" && data.data) {
-                const info = data.data;
-                let html = `
-                    <div class="device-info-table">
-                        <div><strong>Serial Number:</strong> ${info.serial_number}</div>
-                        <div><strong>QC Status:</strong> 
-                            <span class="${info.qc_status === 'PASSED' ? 'qc-pass' : 'qc-fail'}">
-                                ${info.qc_status}
-                            </span>
-                        </div>
-                        <div><strong>Tested Date:</strong> ${info.tested_date}</div>
-                    </div>
-                `;
-                content.innerHTML = html;
-            } else {
-                content.innerHTML = `<p style="color:red;">No valid data found in device memory.</p>`;
+           let html = `<div style="max-height: 600px; overflow-y: auto; padding: 10px; text-align:left;">`;
+
+            if (data.status === "success") {
+                let dev = data.device_info || {};
+                let log = data.log_report || {};
+
+                // ---- DEVICE INFO LIST ----
+                html += `<h3 style="margin-bottom:5px;">Device Info</h3>`;
+                html += `<ul style="list-style-type:none; padding-left:0; text-align:left;">`;
+
+                Object.keys(dev).forEach(key => {
+                    html += `<li style="padding:6px 0; border-bottom:1px solid #ddd;">
+                                <strong>${key}:</strong> ${dev[key]}
+                             </li>`;
+                });
+                html += `</ul><br>`;
+
+                // ---- TEST LOG LIST ----
+                html += `<h3 style="margin-bottom:5px;">Test Log</h3>`;
+                html += buildNestedList(log);
+            } 
+            else {
+                html += `<p style="color:red;">No valid data found in device memory.</p>`;
             }
+
+            html += `</div>`;
+            content.innerHTML = html;
 
             modal.style.display = "block";
         })
@@ -445,6 +455,36 @@ function confirmQC() {
             document.getElementById("deviceInfoModal").style.display = "block";
         });
 }
+
+function buildNestedList(obj) {
+   let html = `<ul style="list-style-type:none; padding-left:0; text-align:left;">`;
+
+    for (const key in obj) {
+        const val = obj[key];
+
+        if (val && typeof val === "object" && !Array.isArray(val)) {
+            // Nested object → expand
+            html += `<li style="padding:6px 0;">
+                        <strong>${key}</strong>
+                        <ul style="list-style-type:none; padding-left:15px; margin-top:5px; text-align:left;">`;
+            for (const sub in val) {
+                html += `<li style="padding:3px 0;">
+                            <strong>${sub}:</strong> ${val[sub]}
+                         </li>`;
+            }
+            html += `</ul></li>`;
+        } else {
+            // Normal key/value
+            html += `<li style="padding:6px 0; border-bottom:1px solid #eee;">
+                        <strong>${key}:</strong> ${val}
+                     </li>`;
+        }
+    }
+
+    html += `</ul>`;
+    return html;
+}
+
 
     function closeDeviceInfo() {
         document.getElementById("deviceInfoModal").style.display = "none";
