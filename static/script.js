@@ -418,34 +418,48 @@ function confirmQC() {
             const modal = document.getElementById("deviceInfoModal");
             const content = document.getElementById("deviceInfoData");
 
-           let html = `<div style="max-height: 600px; overflow-y: auto; padding: 10px; text-align:left;">`;
+            let html = `
+                <div style="max-height: 600px; overflow-y: auto; padding: 10px; text-align:left;">
+            `;
 
-            if (data.status === "success") {
-                let dev = data.device_info || {};
-                let log = data.log_report || {};
+            if (data.status !== "success") {
+                html += `<p style="color:red;">Error: ${data.message || "Unknown error"}</p>`;
+                content.innerHTML = html + "</div>";
+                modal.style.display = "block";
+                return;
+            }
 
-                // ---- DEVICE INFO LIST ----
-                html += `<h3 style="margin-bottom:5px;">Device Info</h3>`;
-                html += `<ul style="list-style-type:none; padding-left:0; text-align:left;">`;
+            const dev = data.device_info || {};
+            const log = data.log_report || {};
 
+            // ---------------- DEVICE INFO ----------------
+            html += `<h3 style="margin-bottom:5px;">Device Info</h3>`;
+            html += `<ul style="list-style-type:none; padding-left:0;">`;
+
+            if (Object.keys(dev).length === 0) {
+                html += `<li style="padding:6px 0;">(No device info available)</li>`;
+            } else {
                 Object.keys(dev).forEach(key => {
-                    html += `<li style="padding:6px 0; border-bottom:1px solid #ddd;">
-                                <strong>${key}:</strong> ${dev[key]}
-                             </li>`;
+                    html += `
+                        <li style="padding:6px 0; border-bottom:1px solid #ddd;">
+                            <strong>${key}:</strong> ${dev[key]}
+                        </li>`;
                 });
-                html += `</ul><br>`;
+            }
 
-                // ---- TEST LOG LIST ----
-                html += `<h3 style="margin-bottom:5px;">Test Log</h3>`;
+            html += `</ul><br>`;
+
+            // ---------------- TEST LOG ----------------
+            html += `<h3 style="margin-bottom:5px;">Test Log</h3>`;
+
+            if (Object.keys(log).length === 0) {
+                html += `<p style="padding:6px 0;">(No test log available)</p>`;
+            } else {
                 html += buildNestedList(log);
-            } 
-            else {
-                html += `<p style="color:red;">No valid data found in device memory.</p>`;
             }
 
             html += `</div>`;
             content.innerHTML = html;
-
             modal.style.display = "block";
         })
         .catch(err => {
@@ -456,28 +470,48 @@ function confirmQC() {
         });
 }
 
+
 function buildNestedList(obj) {
-   let html = `<ul style="list-style-type:none; padding-left:0; text-align:left;">`;
+    let html = `<ul style="list-style-type:none; padding-left:0; text-align:left;">`;
 
     for (const key in obj) {
         const val = obj[key];
 
+        // Nested object
         if (val && typeof val === "object" && !Array.isArray(val)) {
-            // Nested object → expand
-            html += `<li style="padding:6px 0;">
-                        <strong>${key}</strong>
-                        <ul style="list-style-type:none; padding-left:15px; margin-top:5px; text-align:left;">`;
-            for (const sub in val) {
-                html += `<li style="padding:3px 0;">
-                            <strong>${sub}:</strong> ${val[sub]}
-                         </li>`;
+            html += `
+                <li style="padding:6px 0;">
+                    <strong>${key}</strong>
+                    <ul style="list-style-type:none; padding-left:15px; margin-top:5px;">
+            `;
+
+            for (const subKey in val) {
+                html += `
+                    <li style="padding:3px 0;">
+                        <strong>${subKey}:</strong> ${val[subKey]}
+                    </li>`;
             }
+
             html += `</ul></li>`;
-        } else {
-            // Normal key/value
-            html += `<li style="padding:6px 0; border-bottom:1px solid #eee;">
-                        <strong>${key}:</strong> ${val}
-                     </li>`;
+        }
+        // Array → show each item
+        else if (Array.isArray(val)) {
+            html += `
+                <li style="padding:6px 0;">
+                    <strong>${key}:</strong>
+                    <ul style="list-style-type:disc; padding-left:20px;">
+            `;
+            val.forEach(item => {
+                html += `<li>${item}</li>`;
+            });
+            html += `</ul></li>`;
+        }
+        // Simple key/value
+        else {
+            html += `
+                <li style="padding:6px 0; border-bottom:1px solid #eee;">
+                    <strong>${key}:</strong> ${val}
+                </li>`;
         }
     }
 
@@ -486,11 +520,12 @@ function buildNestedList(obj) {
 }
 
 
+
     function closeDeviceInfo() {
         document.getElementById("deviceInfoModal").style.display = "none";
     }
 
-    
+
 function saveBoardInspection() {
     const visual = document.querySelector('input[name="visual"]:checked');
     const electrical = document.querySelector('input[name="electrical"]:checked');
