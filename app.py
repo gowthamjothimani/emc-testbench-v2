@@ -428,7 +428,7 @@ def export_log():
 
     temperature = temp_hum.get("temperature")
     humidity = temp_hum.get("humidity")
-    cpu_usage = psutil.cpu_percent()
+    cpu_usage = psutil.cpu_percent(interval=1)
     log_exporter.set_environment_data(temperature, humidity, cpu_usage)
     log_exporter.export_log()
 
