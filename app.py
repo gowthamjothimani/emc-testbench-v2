@@ -24,8 +24,7 @@ eeprom = EEPROM()
 mqtt_client = MQTTClient(socketio)
 tester_info_submitted = False
 fuse_check_running = True
-log_exporter = LogExporter(controller, mqtt_client)
-log_exporter = LogExporter(controller, mqtt_client)
+log_exporter = LogExporter(controller, mqtt_client, socketio)
 card_reader = CardReader(socketio, log_exporter)
 
 
@@ -95,8 +94,11 @@ def system_status():
             temp, hum = None, None
 
         log_exporter.set_environment_data(temp, hum, cpu_usage)
-        socketio.emit('update_status', {'cpu': cpu_usage})
-        time.sleep(10)
+        socketio.emit('update_status', {
+            'cpu': cpu_usage,
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+        })
+        time.sleep(1)
 
 def safe_clean(raw):
     if not raw:
@@ -110,23 +112,21 @@ def safe_clean(raw):
 
 
 
-def _clear_eeprom_range(start_addr, end_addr, block_size=128):
-    """
-    Clear EEPROM region by writing 0x00 (or 0xFF if you want erased state) across the range.
-    Writes in chunks so large ranges don't cause single huge writes.
-    """
+def _clear_eeprom_range(start_addr, end_addr, block_size=64):
     length = end_addr - start_addr
     if length <= 0:
         return
-    chunk = [0x00] * block_size
+
+    blank = [0xFF] * block_size
     addr = start_addr
+
     while addr < end_addr:
-        remaining = end_addr - addr
-        write_len = min(block_size, remaining)
-        eeprom.write_protect(True)
-        eeprom.write_eeprom(addr, chunk[:write_len])
-        eeprom.write_protect(False)
-        addr += write_len
+        eeprom.write_protect(False)     # allow write
+        eeprom.write_eeprom(addr, blank)
+        time.sleep(0.007)               # mandatory delay
+        eeprom.write_protect(True)      # protect after
+        addr += block_size
+
 
 
 
@@ -177,6 +177,25 @@ def write_eeprom_full():
         qc_status = payload.get("qc_status", "FAILED")
         qc_reasons = payload.get("qc_fail_reasons", [])
         full_log = payload.get("full_log")
+        try:
+            env = get_temp_hum()
+            cpu_now = psutil.cpu_percent()
+
+            # If get_temp_hum returns a string, try parsing it
+            if isinstance(env, str):
+                try:
+                    env = json.loads(env)
+                except:
+                    env = {}
+
+            temperature = env.get("temperature")
+            humidity = env.get("humidity")
+
+            log_exporter.set_environment_data(temperature, humidity, cpu_now)
+
+        except Exception as e:
+            print("Env update failed:", e)
+
 
         # ----------- Build Device Info -----------
         device_info = {
@@ -216,12 +235,15 @@ def write_eeprom_full():
         idx = 0
 
         while idx < len(combined_bytes):
-            chunk = list(combined_bytes[idx: idx + PAGE])
-            eeprom.write_protect(True)
-            eeprom.write_eeprom(addr, chunk)
+            chunk = list(combined_bytes[idx : idx + PAGE])
             eeprom.write_protect(False)
+            eeprom.write_eeprom(addr, chunk)
+            time.sleep(0.007)  # 7ms write cycle
+            eeprom.write_protect(True)
+
             addr += len(chunk)
             idx += PAGE
+
 
         # ----------- Pad Remaining Space -----------
         written_len = len(combined_bytes)

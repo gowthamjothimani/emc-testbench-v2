@@ -273,6 +273,8 @@ button {
   max-height: 70vh;   /* Fixed height */
   overflow-y: auto;   /* Scrollable */
   padding-right: 10px;
+   max-width: 600px;
+    padding: 20px;
 }
 
 /* Device Info Modal Styling */

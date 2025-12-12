@@ -3,9 +3,10 @@ import time
 from sensor_reader import get_temp_hum
 
 class LogExporter:
-    def __init__(self, controller, mqtt_client):
+    def __init__(self, controller, mqtt_client,socketio):
         self.controller = controller
         self.mqtt_client = mqtt_client
+        self.socketio = socketio
         self.tester_name = ""
         self.pcb_serial_number = ""
         self.sensor_status = "No sensor selected"
@@ -105,25 +106,38 @@ class LogExporter:
         }
 
     def export_log(self):
-        data = {
-            "test_details": self.test_details,
-            "system-check": {
-                "cpu-usage": self.env_data["cpu"],  
-                "temperature": self.env_data["temperature"],
-                "humidity": self.env_data["humidity"],
-                "timestamp": time.strftime('%Y-%m-%d %H:%M:%S')
-            }, 
-            "board-inspection-status": self.board_inspection, 
-            "gas-status": {
-                "gas-type": self.sensor_type,
-                "sensor-status": self.sensor_status
-            },
-            "efuse-turn-on-status": self.efuse_on_states,
-            "efuse-turn-off-status": self.efuse_off_states,
-            "card-reader-status": self.card_reader_data,
-            "relay-status": self.relay_states,
-            "alarm-status": self.alarm_states,
-            "qc_status": self.qc_status,
-           "qc_fail_reasons": self.qc_fail_reasons
-        }
-        self.mqtt_client.publish_data(data)
+        try:
+            data = {
+                "test_details": self.test_details,
+                "system-check": {
+                    "cpu-usage": self.env_data["cpu"],  
+                    "temperature": self.env_data["temperature"],
+                    "humidity": self.env_data["humidity"],
+                    "timestamp": time.strftime('%Y-%m-%d %H:%M:%S')
+                }, 
+                "board-inspection-status": self.board_inspection, 
+                "gas-status": {
+                    "gas-type": self.sensor_type,
+                    "sensor-status": self.sensor_status
+                },
+                "efuse-turn-on-status": self.efuse_on_states,
+                "efuse-turn-off-status": self.efuse_off_states,
+                "card-reader-status": self.card_reader_data,
+                "relay-status": self.relay_states,
+                "alarm-status": self.alarm_states,
+                "qc_status": self.qc_status,
+            "qc_fail_reasons": self.qc_fail_reasons
+            }
+            self.mqtt_client.publish_data(data)
+            self.socketio.emit("mqtt_publish_result", {
+                "success": True,
+                "message": "Log published successfully!"
+            })
+
+        except Exception as e:
+            print("Export log failed:", e)
+            self.socketio.emit("mqtt_publish_result", {
+                "success": False,
+                "message": "MQTT publish failed!"
+            })
+

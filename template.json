@@ -1,4 +1,11 @@
 {
+"device_info": {
+            "UUID": "ACU101125",
+            "HW": "ACU-G6.2.0",
+            "timestamp": "Mon Dec  1 15:02:16 UTC 2025",
+            "qc_status": "PASSED"
+        },
+"log_report": {
     "system-check": {
         "cpu-usage": "13.2",
         "temperature": "27.6",
@@ -24,4 +31,5 @@
     "efuse-turn-off-status": {
         "efuse_gas_off": "working"
     }
+}
 }

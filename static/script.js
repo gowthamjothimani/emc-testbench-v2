@@ -439,12 +439,19 @@ function confirmQC() {
             if (Object.keys(dev).length === 0) {
                 html += `<li style="padding:6px 0;">(No device info available)</li>`;
             } else {
-                Object.keys(dev).forEach(key => {
+               Object.keys(dev).forEach(key => {
                     html += `
-                        <li style="padding:6px 0; border-bottom:1px solid #ddd;">
-                            <strong>${key}:</strong> ${dev[key]}
+                        <li style="
+                            padding:4px 0;
+                            display:flex;
+                            justify-content:space-between;
+                            border-bottom:1px solid #eee;
+                        ">
+                            <strong>${key}</strong>
+                            <span>${dev[key]}</span>
                         </li>`;
                 });
+
             }
 
             html += `</ul><br>`;
@@ -557,3 +564,25 @@ function saveBoardInspection() {
         alert("Error: " + err.message);
     });
 }
+socket.on("mqtt_publish_result", function (data) {
+    if (data.success) {
+        alert("✅ " + data.message);
+    } else {
+        alert("❌ " + data.message);
+    }
+});
+function updateLiveTimestamp() {
+    const now = new Date();
+    const formatted =
+        now.getFullYear() + "-" +
+        String(now.getMonth()+1).padStart(2,'0') + "-" +
+        String(now.getDate()).padStart(2,'0') + " " +
+        String(now.getHours()).padStart(2,'0') + ":" +
+        String(now.getMinutes()).padStart(2,'0') + ":" +
+        String(now.getSeconds()).padStart(2,'0');
+
+    document.getElementById("live_timestamp").textContent = formatted;
+}
+
+updateLiveTimestamp();
+setInterval(updateLiveTimestamp, 1000);
